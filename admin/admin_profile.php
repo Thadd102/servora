@@ -230,42 +230,10 @@ function statusClasses(string $status): string
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Admin Profile - Servora</title>
+    <title>Admin Profile - Subnext</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-
-        tailwind.config = {
-
-            theme: {
-
-                extend: {
-
-                    colors: {
-
-                        servora: {
-
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -305,7 +273,7 @@ function statusClasses(string $status): string
 
                     <p class="mt-1 text-sm leading-6 text-slate-500">
 
-                        Manage your Servora administrator account information.
+                        Manage your Subnext administrator account information.
 
                     </p>
 
@@ -931,7 +899,7 @@ function statusClasses(string $status): string
 
                     <p class="mt-1 text-sm leading-6 text-slate-600">
 
-                        Your administrator account has access to sensitive Servora
+                        Your administrator account has access to sensitive Subnext
                         operations. Keep your login credentials private and use a
                         strong password.
 
@@ -953,7 +921,7 @@ function statusClasses(string $status): string
 
         <div class="mx-auto max-w-5xl px-4 py-6 text-center text-xs text-slate-400 sm:px-6 lg:px-8">
 
-            Servora Administrator Portal
+            Subnext Administrator Portal
 
         </div>
 

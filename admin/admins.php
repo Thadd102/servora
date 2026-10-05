@@ -117,42 +117,10 @@ function roleLabel(string $role): string
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Admin Management - Servora</title>
+    <title>Admin Management - Subnext</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-
-        tailwind.config = {
-
-            theme: {
-
-                extend: {
-
-                    colors: {
-
-                        servora: {
-
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -193,7 +161,7 @@ function roleLabel(string $role): string
 
                     <p class="mt-1 max-w-xl text-sm leading-6 text-slate-500">
 
-                        Manage Servora administrators, roles and account access.
+                        Manage Subnext administrators, roles and account access.
 
                     </p>
 
@@ -1088,7 +1056,7 @@ function roleLabel(string $role): string
 
         <div class="mx-auto max-w-7xl px-4 py-6 text-center text-xs text-slate-400 sm:px-6 lg:px-8">
 
-            Servora Admin Management
+            Subnext Admin Management
 
         </div>
 

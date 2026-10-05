@@ -159,7 +159,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Reset Password | Servora</title>
+    <title>Reset Password | Subnext</title>
 
     <style>
 
@@ -260,7 +260,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <div class="card">
 
-    <div class="logo">Servora</div>
+    <div class="logo">Subnext</div>
+    <p style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; margin-bottom: 14px;">Digital Services, Simplified.</p>
 
     <p class="subtitle">
         Create a new password
@@ -325,6 +326,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </form>
 
     <?php endif; ?>
+
+    <p style="margin-top: 24px; font-size: 11px; color: #94a3b8; text-align: center;">© <?= date('Y') ?> Subnext. All rights reserved.</p>
 
 </div>
 

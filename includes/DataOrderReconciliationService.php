@@ -1526,7 +1526,7 @@ class DataOrderReconciliationService
                     "ambiguous",
 
                 "message" =>
-                    "A supplier transaction matches this order, but another Servora order could also match the same supplier record. The transaction must not be assigned automatically.",
+                    "A supplier transaction matches this order, but another Subnext order could also match the same supplier record. The transaction must not be assigned automatically.",
 
                 "order" =>
                     $order,
@@ -1595,7 +1595,7 @@ class DataOrderReconciliationService
                     "ambiguous",
 
                 "message" =>
-                    "Multiple high-confidence supplier transactions match this Servora order. Manual investigation is required.",
+                    "Multiple high-confidence supplier transactions match this Subnext order. Manual investigation is required.",
 
                 "order" =>
                     $order,
@@ -1623,7 +1623,7 @@ class DataOrderReconciliationService
                     "possible_candidate",
 
                 "message" =>
-                    "Supplier transactions with matching evidence were found, but none can be safely identified as this exact Servora order.",
+                    "Supplier transactions with matching evidence were found, but none can be safely identified as this exact Subnext order.",
 
                 "order" =>
                     $order,

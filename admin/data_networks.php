@@ -391,30 +391,10 @@ foreach ($networks as $network) {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Networks | Servora Admin</title>
+    <title>Networks | Subnext Admin</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -445,7 +425,7 @@ foreach ($networks as $network) {
             <div class="mt-5">
 
                 <p class="text-sm font-semibold text-white/70">
-                    Servora Data Management
+                    Subnext Data Management
                 </p>
 
                 <h1
@@ -458,7 +438,7 @@ foreach ($networks as $network) {
                     class="mt-3 max-w-2xl text-sm leading-6 text-white/75 sm:text-base"
                 >
                     Manage the mobile networks available for
-                    data purchases on Servora.
+                    data purchases on Subnext.
                 </p>
 
             </div>
@@ -588,7 +568,7 @@ foreach ($networks as $network) {
             <p
                 class="mt-1 text-sm text-slate-500"
             >
-                You only need this when Servora starts
+                You only need this when Subnext starts
                 supporting another mobile network.
             </p>
 
@@ -971,7 +951,7 @@ foreach ($networks as $network) {
     <footer
         class="py-8 text-center text-xs text-slate-400"
     >
-        Servora Network Management
+        Subnext Network Management
     </footer>
 
 

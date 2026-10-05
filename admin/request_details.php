@@ -210,31 +210,11 @@ $statusOptions = [
     >
 
     <title>
-        Request <?= htmlspecialchars($request["request_code"]) ?> | Servora Admin
+        Request <?= htmlspecialchars($request["request_code"]) ?> | Subnext Admin
     </title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -1231,7 +1211,7 @@ $statusOptions = [
     <footer class="border-t border-slate-200 py-6 text-center">
 
         <p class="text-xs text-slate-400">
-            Servora Admin · Request Management
+            Subnext Admin · Request Management
         </p>
 
     </footer>

@@ -17,8 +17,8 @@ require_once __DIR__ . '/../includes/admin_auth.php';
 require_once __DIR__ . '/../includes/ProviderBalanceService.php';
 
 try {
-    $service = new ProviderBalanceService();
-    $balances = $service->getAllBalances();
+    $forceRefresh = isset($_GET['refresh']) && $_GET['refresh'] === '1';
+    $balances = $service->getAllBalances($forceRefresh);
 
     echo json_encode([
         'ok' => true,

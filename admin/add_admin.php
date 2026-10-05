@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Add Administrator - Servora</title>
+    <title>Add Administrator - Subnext</title>
 
     <style>
 
@@ -299,7 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1>Add Administrator</h1>
 
         <p class="subtitle">
-            Create a new administrator account for Servora.
+            Create a new administrator account for Subnext.
         </p>
 
         <?php if (!empty($errors)): ?>

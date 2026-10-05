@@ -128,23 +128,9 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Utility Orders - Servora Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF', 100: '#EDE9FE', 200: '#DDD6FE',
-                            500: '#635BDB', 600: '#5146C7', 700: '#3E37B7',
-                            800: '#312E81', 900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Utility Orders - Subnext Admin</title>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
 
@@ -155,7 +141,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="dashboard.php" class="flex items-center gap-2">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-700 text-lg font-black text-white">S</div>
                 <div>
-                    <span class="font-bold text-slate-900 block leading-tight">Servora</span>
+                    <span class="font-bold text-slate-900 block leading-tight">Subnext</span>
                     <span class="text-[10px] uppercase font-bold text-servora-700">Admin Panel</span>
                 </div>
             </a>

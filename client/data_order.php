@@ -143,30 +143,10 @@ $statusConfig = match ($status) {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Data Order | Servora</title>
+    <title>Data Order | Subnext</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -179,7 +159,7 @@ $statusConfig = match ($status) {
         <a href="dashboard.php" class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-700 text-lg font-black text-white shadow-sm">S</div>
             <div>
-                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Servora</div>
+                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Subnext</div>
                 <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Data Order</div>
             </div>
         </a>
@@ -201,6 +181,12 @@ $statusConfig = match ($status) {
             <a href="profile.php" class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-100 font-bold text-servora-700 text-sm" title="My Profile">
                 <?= htmlspecialchars($profileInitial, ENT_QUOTES, "UTF-8") ?>
             </a>
+            <a href="../logout.php" class="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3.5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 hover:border-red-300" title="Logout">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span>Logout</span>
+            </a>
         </div>
     </div>
 </header>
@@ -219,7 +205,7 @@ $statusConfig = match ($status) {
         </div>
         <div class="mt-6">
             <p class="text-sm font-semibold text-white/70">
-                Servora Data Order
+                Subnext Data Order
             </p>
             <h1 class="mt-1 text-3xl font-black">
                 Order Details

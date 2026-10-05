@@ -378,31 +378,11 @@ $exampleSellingPrice = (float) (
     >
 
     <title>
-        Foreign Number Settings | Servora
+        Foreign Number Settings | Subnext
     </title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -448,7 +428,7 @@ $exampleSellingPrice = (float) (
                             class="text-sm font-semibold
                             text-white/70"
                         >
-                            Servora
+                            Subnext
                         </p>
 
                         <p
@@ -493,7 +473,7 @@ $exampleSellingPrice = (float) (
                 text-sm leading-6
                 text-white/75 sm:text-base"
             >
-                Configure how Servora calculates
+                Configure how Subnext calculates
                 the selling price of verification
                 numbers.
             </p>
@@ -666,7 +646,7 @@ $exampleSellingPrice = (float) (
                 leading-6 text-slate-500"
             >
                 The provider cost comes from the
-                number supplier. Servora adds your
+                number supplier. Subnext adds your
                 configured profit before showing
                 the final price to the customer.
             </p>
@@ -857,7 +837,7 @@ $exampleSellingPrice = (float) (
                     class="mt-2 text-xs
                     leading-5 text-slate-400"
                 >
-                    Servora will never make less
+                    Subnext will never make less
                     than this amount on an order,
                     even when the calculated
                     percentage is lower.
@@ -916,7 +896,7 @@ $exampleSellingPrice = (float) (
                     class="mt-2 text-xs
                     leading-5 text-slate-400"
                 >
-                    When inactive, Servora blocks
+                    When inactive, Subnext blocks
                     new foreign-number orders on
                     both the options page and the
                     server-side purchase processor.
@@ -1180,7 +1160,7 @@ $exampleSellingPrice = (float) (
         class="py-8 text-center
         text-xs text-slate-400"
     >
-        Servora Administration
+        Subnext Administration
         · <?= e($adminName) ?>
     </footer>
 
@@ -1222,7 +1202,7 @@ function updateProfitDisplay() {
             "%";
 
         profitTypeHelp.textContent =
-            "Example: 20 means Servora adds 20% of the supplier cost.";
+            "Example: 20 means Subnext adds 20% of the supplier cost.";
 
     } else {
 
@@ -1230,7 +1210,7 @@ function updateProfitDisplay() {
             "₦";
 
         profitTypeHelp.textContent =
-            "Example: 200 means Servora adds ₦200 to the supplier cost.";
+            "Example: 200 means Subnext adds ₦200 to the supplier cost.";
     }
 }
 

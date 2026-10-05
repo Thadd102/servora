@@ -3,7 +3,7 @@
 /**
  * ReceiptService - Central Reusable Receipt Generation Engine
  *
- * Provides authentic, professional receipt data across all Servora services:
+ * Provides authentic, professional receipt data across all Subnext services:
  * - Airtime VTU
  * - Data Subscription
  * - Electricity Bill Payment
@@ -251,7 +251,7 @@ class ReceiptService
             'amount' => (float)$row['selling_price'],
             'formatted_amount' => '₦' . number_format((float)$row['selling_price'], 2),
             'status' => 'SUCCESSFUL',
-            'payment_method' => 'Servora Wallet',
+            'payment_method' => 'Subnext Wallet',
             'date' => $dateValue,
             'formatted_date' => date('d M Y, h:i A', strtotime($dateValue)),
             'customer_identifier' => $row['customer_identifier'],
@@ -345,7 +345,7 @@ class ReceiptService
             'amount' => (float)$row['selling_price'],
             'formatted_amount' => '₦' . number_format((float)$row['selling_price'], 2),
             'status' => 'SUCCESSFUL',
-            'payment_method' => 'Servora Wallet',
+            'payment_method' => 'Subnext Wallet',
             'date' => $dateValue,
             'formatted_date' => date('d M Y, h:i A', strtotime($dateValue)),
             'customer_identifier' => $row['phone_number'],
@@ -443,7 +443,7 @@ class ReceiptService
             'amount' => (float)$row['selling_price'],
             'formatted_amount' => '₦' . number_format((float)$row['selling_price'], 2),
             'status' => 'COMPLETED',
-            'payment_method' => 'Servora Wallet',
+            'payment_method' => 'Subnext Wallet',
             'date' => $dateValue,
             'formatted_date' => date('d M Y, h:i A', strtotime($dateValue)),
             'customer_identifier' => $phone ?: ($clientInfo['phone'] ?: 'N/A'),
@@ -533,16 +533,16 @@ class ReceiptService
         } elseif (str_starts_with($refUpper, 'PSK') || str_contains($refUpper, 'PAYSTACK')) {
             $paymentMethod = 'Paystack Payment Gateway';
         } elseif (str_starts_with($refUpper, 'MANUAL') || str_contains(strtolower($description), 'admin')) {
-            $paymentMethod = 'Servora Direct Bank Transfer';
+            $paymentMethod = 'Subnext Direct Bank Transfer';
         } elseif ($type === 'debit') {
-            $paymentMethod = 'Servora Wallet Account';
+            $paymentMethod = 'Subnext Wallet Account';
         }
 
         return [
             'receipt_no' => $row['reference'],
             'reference' => $row['reference'],
             'service_type' => 'wallet',
-            'service_category' => 'Servora Wallet Transaction',
+            'service_category' => 'Subnext Wallet Transaction',
             'product_name' => $description,
             'amount' => $amount,
             'formatted_amount' => '₦' . number_format($amount, 2),

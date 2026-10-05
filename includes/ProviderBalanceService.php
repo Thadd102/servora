@@ -55,6 +55,28 @@ class ProviderBalanceService
     }
 
     /**
+     * Return instantly cached balances if available, or lightweight placeholders
+     * to eliminate render-blocking HTTP latency on initial dashboard load.
+     */
+    public function getCachedOrPlaceholderBalances(): array
+    {
+        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'subnext_provider_balances.json';
+        if (file_exists($cacheFile)) {
+            $cached = @json_decode((string)@file_get_contents($cacheFile), true);
+            if (is_array($cached) && !empty($cached)) {
+                return $cached;
+            }
+        }
+
+        return [
+            'cheapdatahub' => $this->buildPlaceholderPayload('cheapdatahub', 'CheapDataHub', 'Data & Airtime', '₦', 'NGN'),
+            'fivesim' => $this->buildPlaceholderPayload('fivesim', '5SIM', 'Foreign Virtual Numbers', '$', 'USD'),
+            'vtpass' => $this->buildPlaceholderPayload('vtpass', 'VTpass', 'Data, Utilities & Exams', '₦', 'NGN'),
+            'termii' => $this->buildPlaceholderPayload('termii', 'Termii', 'Bulk SMS Gateway', '₦', 'NGN'),
+        ];
+    }
+
+    /**
      * Retrieve live balances across all registered upstream providers.
      *
      * Every provider is queried independently inside isolated error handlers.
@@ -62,8 +84,21 @@ class ProviderBalanceService
      *
      * @return array<string, array> Keyed list of normalized provider balance payloads.
      */
-    public function getAllBalances(): array
+    public function getAllBalances(bool $forceRefresh = false): array
     {
+        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'subnext_provider_balances.json';
+        $cacheTtl = 180; // 3 minutes
+
+        if (!$forceRefresh && file_exists($cacheFile)) {
+            $mtime = @filemtime($cacheFile);
+            if ($mtime !== false && (time() - $mtime) < $cacheTtl) {
+                $cached = @json_decode((string)@file_get_contents($cacheFile), true);
+                if (is_array($cached) && !empty($cached)) {
+                    return $cached;
+                }
+            }
+        }
+
         $balances = [];
 
         // 1. CheapDataHub (Data & Airtime)
@@ -120,6 +155,10 @@ class ProviderBalanceService
                 'NGN',
                 'Exception: ' . $e->getMessage()
             );
+        }
+
+        if (!empty($balances)) {
+            @file_put_contents($cacheFile, json_encode($balances, JSON_UNESCAPED_SLASHES));
         }
 
         return $balances;
@@ -397,8 +436,29 @@ class ProviderBalanceService
             'symbol' => $curr === 'NGN' ? '₦' : $curr,
             'formatted' => ($curr === 'NGN' ? '₦' : '') . number_format($balanceFloat, 2) . ($curr !== 'NGN' ? " $curr" : ''),
             'environment' => 'Live',
-            'extra_info' => 'Application: ' . ($res['data']['application'] ?? 'Servora'),
+            'extra_info' => 'Application: ' . ($res['data']['application'] ?? 'Subnext'),
             'message' => 'Termii balance retrieved successfully',
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+    }
+
+    /**
+     * Standardized placeholder payload while async fetch loads
+     */
+    private function buildPlaceholderPayload(string $key, string $name, string $service, string $symbol, string $currency): array
+    {
+        return [
+            'provider' => $key,
+            'name' => $name,
+            'service' => $service,
+            'status' => 'loading',
+            'is_configured' => true,
+            'balance' => 0.00,
+            'currency' => $currency,
+            'symbol' => $symbol,
+            'formatted' => 'Loading...',
+            'environment' => 'Syncing',
+            'message' => 'Syncing live balance in background...',
             'timestamp' => date('Y-m-d H:i:s')
         ];
     }

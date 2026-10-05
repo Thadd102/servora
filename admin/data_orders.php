@@ -331,29 +331,11 @@ function providerStatusClass(
     >
 
     <title>
-        Data Orders | Servora Admin
+        Data Orders | Subnext Admin
     </title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: "#f5f3ff",
-                            100: "#ede9fe",
-                            500: "#7c3aed",
-                            600: "#6d28d9",
-                            700: "#5b21b6",
-                            900: "#2e1065"
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -416,7 +398,7 @@ function providerStatusClass(
                         text-gray-500
                     "
                 >
-                    Monitor Servora data purchases and supplier responses.
+                    Monitor Subnext data purchases and supplier responses.
                 </p>
 
             </div>

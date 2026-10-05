@@ -78,485 +78,14 @@ function serviceIcon(string $serviceCode): string
     content="noindex,nofollow"
 >
 
-<title>Foreign Numbers | Servora</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    servora: {
-                        50: '#F5F3FF', 100: '#EDE9FE', 200: '#DDD6FE',
-                        500: '#635BDB', 600: '#5146C7', 700: '#3E37B7',
-                        800: '#312E81', 900: '#1E1B4B'
-                    }
-                }
-            }
-        }
-    }
-</script>
-
-<style>
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family:
-        Inter,
-        Arial,
-        Helvetica,
-        sans-serif;
-
-    background: #f5f7fb;
-    color: #172033;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
-
-button,
-input {
-    font: inherit;
-}
-
-.topbar {
-    background: #ffffff;
-
-    border-bottom:
-        1px solid #e5e9f0;
-
-    padding: 18px 24px;
-}
-
-.topbar-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 20px;
-}
-
-.brand {
-    color: #144be6;
-
-    font-size: 23px;
-    font-weight: 900;
-}
-
-.wallet {
-    background: #f5f7ff;
-
-    border:
-        1px solid #dfe5ff;
-
-    border-radius: 11px;
-
-    padding: 10px 14px;
-}
-
-.wallet-label {
-    color: #737c90;
-    font-size: 11px;
-    margin-bottom: 3px;
-}
-
-.wallet-amount {
-    font-weight: 900;
-}
-
-.container {
-    max-width: 1100px;
-
-    margin: 0 auto;
-
-    padding:
-        35px 24px 70px;
-}
-
-.back {
-    display: inline-block;
-
-    color: #687286;
-
-    font-size: 14px;
-    font-weight: 700;
-
-    margin-bottom: 24px;
-}
-
-.hero {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-
-    gap: 25px;
-
-    margin-bottom: 25px;
-}
-
-.hero h1 {
-    font-size: 31px;
-    margin-bottom: 8px;
-}
-
-.hero p {
-    color: #747e91;
-    line-height: 1.6;
-}
-
-.provider-badge {
-    background: #fff9e8;
-
-    border:
-        1px solid #f2dfa5;
-
-    color: #72591a;
-
-    border-radius: 999px;
-
-    padding:
-        8px 12px;
-
-    font-size: 11px;
-    font-weight: 800;
-
-    white-space: nowrap;
-}
-
-/*
-|--------------------------------------------------------------------------
-| SEARCH
-|--------------------------------------------------------------------------
-*/
-
-.search-box {
-    position: relative;
-
-    margin-bottom: 24px;
-}
-
-.search-box input {
-    width: 100%;
-
-    background: #ffffff;
-
-    border:
-        1px solid #dfe4ec;
-
-    border-radius: 13px;
-
-    padding:
-        14px 16px 14px 45px;
-
-    outline: none;
-
-    font-size: 14px;
-}
-
-.search-box input:focus {
-    border-color: #144be6;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(20, 75, 230, 0.07);
-}
-
-.search-icon {
-    position: absolute;
-
-    left: 16px;
-    top: 50%;
-
-    transform:
-        translateY(-50%);
-
-    color: #7f8899;
-
-    font-size: 18px;
-}
-
-/*
-|--------------------------------------------------------------------------
-| FEATURED
-|--------------------------------------------------------------------------
-*/
-
-.section-heading {
-    display: flex;
-
-    justify-content:
-        space-between;
-
-    align-items: center;
-
-    gap: 15px;
-
-    margin-bottom: 14px;
-}
-
-.section-heading h2 {
-    font-size: 16px;
-}
-
-.service-count {
-    color: #818a9a;
-    font-size: 12px;
-}
-
-/*
-|--------------------------------------------------------------------------
-| SERVICE GRID
-|--------------------------------------------------------------------------
-*/
-
-.services-grid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            auto-fill,
-            minmax(220px, 1fr)
-        );
-
-    gap: 14px;
-}
-
-.service-card {
-    background: #ffffff;
-
-    border:
-        1px solid #e1e6ee;
-
-    border-radius: 15px;
-
-    padding: 17px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 14px;
-
-    min-height: 83px;
-
-    transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease,
-        transform 0.15s ease;
-}
-
-.service-card:hover {
-    border-color: #bfc9db;
-
-    box-shadow:
-        0 8px 24px
-        rgba(22, 32, 52, 0.07);
-
-    transform:
-        translateY(-1px);
-}
-
-.service-logo {
-    width: 48px;
-    height: 48px;
-
-    flex: 0 0 48px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 14px;
-
-    background: #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.service-logo svg {
-    width: 32px;
-    height: 32px;
-    display: block;
-}
-
-.service-info {
-    min-width: 0;
-    flex: 1;
-}
-
-.service-name {
-    font-size: 14px;
-    font-weight: 900;
-
-    margin-bottom: 5px;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.service-description {
-    color: #7c8597;
-
-    font-size: 11px;
-
-    line-height: 1.45;
-}
-
-.service-arrow {
-    color: #9aa2b1;
-
-    font-size: 18px;
-}
-
-/*
-|--------------------------------------------------------------------------
-| POPULAR MARKER
-|--------------------------------------------------------------------------
-*/
-
-.service-card[data-service="whatsapp"] .service-logo {
-    background: #ecfbf1;
-}
-
-.service-card[data-service="telegram"] .service-logo {
-    background: #eef8ff;
-}
-
-.service-card[data-service="facebook"] .service-logo {
-    background: #eef3ff;
-}
-
-.service-card[data-service="instagram"] .service-logo {
-    background: #fff1f7;
-}
-
-.service-card[data-service="tiktok"] .service-logo {
-    background: #f3f3f3;
-}
-
-.service-card[data-service="google"] .service-logo {
-    background: #f5f7fb;
-}
-
-.service-card[data-service="microsoft"] .service-logo {
-    background: #f5f7fb;
-}
-
-.service-card[data-service="amazon"] .service-logo {
-    background: #fff7e9;
-}
-
-.service-card[data-service="apple"] .service-logo {
-    background: #f3f3f3;
-}
-
-/*
-|--------------------------------------------------------------------------
-| EMPTY SEARCH
-|--------------------------------------------------------------------------
-*/
-
-.no-results {
-    display: none;
-
-    background: #ffffff;
-
-    border:
-        1px solid #e1e6ee;
-
-    border-radius: 14px;
-
-    padding: 30px;
-
-    text-align: center;
-
-    color: #7c8597;
-}
-
-/*
-|--------------------------------------------------------------------------
-| INFORMATION
-|--------------------------------------------------------------------------
-*/
-
-.info {
-    margin-top: 26px;
-
-    background: #f8faff;
-
-    border:
-        1px solid #e0e7fa;
-
-    border-radius: 14px;
-
-    padding: 18px;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 20px;
-}
-
-.info-item strong {
-    display: block;
-
-    font-size: 12px;
-
-    margin-bottom: 5px;
-}
-
-.info-item span {
-    color: #7b8496;
-
-    font-size: 11px;
-
-    line-height: 1.5;
-}
-
-/*
-|--------------------------------------------------------------------------
-| MOBILE
-|--------------------------------------------------------------------------
-*/
-
-@media (max-width: 700px) {
-
-    .hero {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .hero h1 {
-        font-size: 26px;
-    }
-
-    .services-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .info {
-        grid-template-columns: 1fr;
-    }
-
-}
-
-</style>
-
+<title>Foreign Numbers | Subnext</title>
+
+<!-- Precompiled Production Stylesheet -->
+<link rel="stylesheet" href="../assets/css/style.css">
+<meta name="description" content="Subnext Foreign Virtual Numbers: Get instant international SMS verification codes for WhatsApp, Telegram, Google, and more.">
 </head>
 
-<body>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
 
 <!-- Desktop Navigation Header -->
 <header class="hidden md:block sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
@@ -564,7 +93,7 @@ input {
         <a href="dashboard.php" class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-700 text-lg font-black text-white shadow-sm">S</div>
             <div>
-                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Servora</div>
+                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Subnext</div>
                 <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Virtual Numbers</div>
             </div>
         </a>
@@ -586,6 +115,12 @@ input {
             <a href="profile.php" class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-100 font-bold text-servora-700 text-sm" title="My Profile">
                 <?= htmlspecialchars($profileInitial, ENT_QUOTES, "UTF-8") ?>
             </a>
+            <a href="../logout.php" class="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3.5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 hover:border-red-300" title="Logout">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span>Logout</span>
+            </a>
         </div>
     </div>
 </header>
@@ -601,7 +136,7 @@ input {
         <div class="mt-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
                 <p class="text-sm font-semibold text-white/70">
-                    Servora Verification
+                    Subnext Verification
                 </p>
                 <h1 class="mt-1 text-3xl font-black">
                     Foreign Numbers
@@ -662,179 +197,88 @@ input {
             </div>
         </div>
 
-        <div
-            class="services-grid"
-            id="servicesGrid"
-        >
-
+        <div id="servicesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
 <?php foreach ($services as $service): ?>
-
     <?php
-
-    $serviceCode = strtolower(
-        trim(
-            (string) (
-                $service["code"] ?? ""
-            )
-        )
-    );
-
-    $serviceName = trim(
-        (string) (
-            $service["name"] ?? ""
-        )
-    );
-
-    if (
-        $serviceCode === ""
-        || $serviceName === ""
-    ) {
+    $serviceCode = strtolower(trim((string) ($service["code"] ?? "")));
+    $serviceName = trim((string) ($service["name"] ?? ""));
+    if ($serviceCode === "" || $serviceName === "") {
         continue;
     }
-
     ?>
-
     <a
-        href="foreign_number_options.php?service=<?= urlencode(
-            $serviceCode
-        ) ?>"
-
-        class="service-card"
-
-        data-service="<?= htmlspecialchars(
-            $serviceCode,
-            ENT_QUOTES,
-            "UTF-8"
-        ) ?>"
-
-        data-name="<?= htmlspecialchars(
-            strtolower($serviceName),
-            ENT_QUOTES,
-            "UTF-8"
-        ) ?>"
+        href="foreign_number_options.php?service=<?= urlencode($serviceCode) ?>"
+        class="service-card group flex items-center justify-between gap-3.5 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs transition hover:border-servora-400 hover:bg-slate-50/70 hover:shadow-md hover:-translate-y-0.5"
+        data-service="<?= htmlspecialchars($serviceCode, ENT_QUOTES, "UTF-8") ?>"
+        data-name="<?= htmlspecialchars(strtolower($serviceName), ENT_QUOTES, "UTF-8") ?>"
     >
-
-        <div class="service-logo">
-            <?= serviceIcon(
-                $serviceCode
-            ) ?>
-        </div>
-
-        <div class="service-info">
-
-            <div class="service-name">
-                <?= htmlspecialchars(
-                    $serviceName,
-                    ENT_QUOTES,
-                    "UTF-8"
-                ) ?>
+        <div class="flex items-center gap-3.5 min-w-0">
+            <div class="service-logo flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 p-2 shadow-xs group-hover:scale-105 transition-transform">
+                <?= serviceIcon($serviceCode) ?>
             </div>
-
-            <div class="service-description">
-
-                <?php if (
-                    $serviceCode === "whatsapp"
-                ): ?>
-                    WhatsApp verification
-
-                <?php elseif (
-                    $serviceCode === "telegram"
-                ): ?>
-                    Telegram verification
-
-                <?php elseif (
-                    $serviceCode === "facebook"
-                ): ?>
-                    Facebook verification
-
-                <?php elseif (
-                    $serviceCode === "instagram"
-                ): ?>
-                    Instagram / Threads
-
-                <?php elseif (
-                    $serviceCode === "tiktok"
-                ): ?>
-                    TikTok verification
-
-                <?php elseif (
-                    $serviceCode === "google"
-                ): ?>
-                    Google / YouTube
-
-                <?php elseif (
-                    $serviceCode === "microsoft"
-                ): ?>
-                    Microsoft services
-
-                <?php else: ?>
-                    SMS verification service
-                <?php endif; ?>
-
+            <div class="service-info min-w-0">
+                <div class="service-name text-sm font-bold text-slate-900 truncate group-hover:text-servora-700 transition-colors">
+                    <?= htmlspecialchars($serviceName, ENT_QUOTES, "UTF-8") ?>
+                </div>
+                <div class="service-description text-xs text-slate-500 truncate">
+                    <?php if ($serviceCode === "whatsapp"): ?>
+                        WhatsApp verification
+                    <?php elseif ($serviceCode === "telegram"): ?>
+                        Telegram verification
+                    <?php elseif ($serviceCode === "facebook"): ?>
+                        Facebook verification
+                    <?php elseif ($serviceCode === "instagram"): ?>
+                        Instagram / Threads
+                    <?php elseif ($serviceCode === "tiktok"): ?>
+                        TikTok verification
+                    <?php elseif ($serviceCode === "google"): ?>
+                        Google / YouTube
+                    <?php elseif ($serviceCode === "microsoft"): ?>
+                        Microsoft services
+                    <?php else: ?>
+                        SMS verification service
+                    <?php endif; ?>
+                </div>
             </div>
-
         </div>
-
-        <div class="service-arrow">
-            ›
+        <div class="service-arrow flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 font-bold text-sm transition group-hover:bg-servora-100 group-hover:text-servora-700">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
         </div>
-
     </a>
-
 <?php endforeach; ?>
+        </div>
 
-</div>
+        <div id="noResults" class="hidden py-12 text-center text-sm font-medium text-slate-400">
+            No matching service found.
+        </div>
 
-<div
-    class="no-results"
-    id="noResults"
->
-    No matching service found.
-</div>
-
-<div class="info">
-
-    <div class="info-item">
-
-        <strong>
-            1. Choose Service
-        </strong>
-
-        <span>
-            Select the website or app you
-            want to verify.
-        </span>
-
-    </div>
-
-    <div class="info-item">
-
-        <strong>
-            2. Choose Country
-        </strong>
-
-        <span>
-            Select from countries currently
-            available for that service.
-        </span>
-
-    </div>
-
-    <div class="info-item">
-
-        <strong>
-            3. Receive Message
-        </strong>
-
-        <span>
-            Your order page will display the
-            verification result when available.
-        </span>
-
-    </div>
-
-    </div>
-</section>
+        <!-- How It Works Steps -->
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-slate-100">
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4 border border-slate-100/80">
+                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-servora-600 text-xs font-black text-white">1</div>
+                <div>
+                    <strong class="block text-xs font-bold text-slate-900">Choose Service</strong>
+                    <span class="mt-0.5 block text-xs text-slate-500">Select the website or app you want to verify.</span>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4 border border-slate-100/80">
+                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-servora-600 text-xs font-black text-white">2</div>
+                <div>
+                    <strong class="block text-xs font-bold text-slate-900">Choose Country</strong>
+                    <span class="mt-0.5 block text-xs text-slate-500">Select from available countries with live pricing.</span>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4 border border-slate-100/80">
+                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-servora-600 text-xs font-black text-white">3</div>
+                <div>
+                    <strong class="block text-xs font-bold text-slate-900">Receive Code</strong>
+                    <span class="mt-0.5 block text-xs text-slate-500">Your order page displays the incoming SMS code in real time.</span>
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <script>

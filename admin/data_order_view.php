@@ -602,31 +602,11 @@ if ($orderStatus === "successful") {
     >
 
     <title>
-        Data Order <?= e($order["order_reference"]) ?> | Servora
+        Data Order <?= e($order["order_reference"]) ?> | Subnext
     </title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -2070,7 +2050,7 @@ if ($orderStatus === "successful") {
                                 <p
                                     class="text-xs font-bold uppercase tracking-wide text-slate-400"
                                 >
-                                    Servora Request Reference
+                                    Subnext Request Reference
                                 </p>
 
                                 <p
@@ -2197,7 +2177,7 @@ if ($orderStatus === "successful") {
             "candidate_not_confirmed" =>
                 "The supplier candidate is no longer classified as high confidence.",
             "cross_order_collision" =>
-                "Another Servora order could match this supplier transaction.",
+                "Another Subnext order could match this supplier transaction.",
             "insufficient_evidence" =>
                 "The supplier evidence is not strong enough to confirm this order.",
             "provider_reference_missing" =>
@@ -2498,7 +2478,7 @@ if ($orderStatus === "successful") {
                     <p
                         class="mt-2 max-w-3xl text-sm leading-6 text-slate-500"
                     >
-                        Servora is comparing this uncertain
+                        Subnext is comparing this uncertain
                         processing order with the supplier's
                         transaction history. This investigation
                         is read-only.
@@ -2830,14 +2810,14 @@ if ($orderStatus === "successful") {
                         <p
                             class="mt-2 text-sm leading-6 text-emerald-800"
                         >
-                            Servora found one unique supplier transaction with strong matching evidence. Confirmation will re-check the supplier evidence on the server before changing the order.
+                            Subnext found one unique supplier transaction with strong matching evidence. Confirmation will re-check the supplier evidence on the server before changing the order.
                         </p>
 
                         <form
                             method="POST"
                             action="confirm_data_order_success.php"
                             class="mt-4"
-                            onsubmit="return confirm('Confirm this supplier transaction as successful? Servora will verify the evidence again before updating the order.');"
+                            onsubmit="return confirm('Confirm this supplier transaction as successful? Subnext will verify the evidence again before updating the order.');"
                         >
 
                             <input
@@ -3204,7 +3184,7 @@ if ($orderStatus === "successful") {
                                         <h4
                                             class="font-black text-red-900"
                                         >
-                                            Other Servora orders also match
+                                            Other Subnext orders also match
                                         </h4>
 
                                         <p
@@ -3213,7 +3193,7 @@ if ($orderStatus === "successful") {
                                             This supplier record cannot safely
                                             be assigned to this order because
                                             <?= $crossOrderCollisionCount ?>
-                                            other Servora
+                                            other Subnext
                                             <?= $crossOrderCollisionCount === 1
                                                 ? "order also matches"
                                                 : "orders also match"
@@ -3542,7 +3522,7 @@ if ($orderStatus === "successful") {
     <footer
         class="py-8 text-center text-xs text-slate-400"
     >
-        Servora Data Order Investigation
+        Subnext Data Order Investigation
     </footer>
 
 

@@ -37,7 +37,7 @@ if ($clientLoginEnabled !== false && (string) $clientLoginEnabled === "0") {
         header('Content-Type: application/json');
         echo json_encode([
             'status' => 'error',
-            'message' => 'Servora is temporarily under maintenance. Client access is paused.',
+            'message' => 'Subnext is temporarily under maintenance. Client access is paused.',
             'maintenance' => true
         ]);
         exit;

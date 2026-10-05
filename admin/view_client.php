@@ -228,28 +228,8 @@ function transactionAmountClass(string $type): string
         Client Profile - <?= e($client['full_name']) ?>
     </title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -462,7 +442,7 @@ function transactionAmountClass(string $type): string
                     </div>
 
                     <p class="text-xs text-indigo-200 mt-5">
-                        Available funds in the client's Servora wallet.
+                        Available funds in the client's Subnext wallet.
                     </p>
 
                 </div>
@@ -1269,7 +1249,7 @@ function transactionAmountClass(string $type): string
         <div class="text-center py-8">
 
             <p class="text-xs text-slate-400">
-                Servora Admin Panel
+                Subnext Admin Panel
             </p>
 
         </div>

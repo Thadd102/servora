@@ -540,7 +540,7 @@ try {
         $pdo->rollBack();
     }
 
-    error_log("Servora data purchase failed.");
+    error_log("Subnext data purchase failed.");
     header("Location: buy_data.php?error=processing");
     exit;
 }

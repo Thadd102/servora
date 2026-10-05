@@ -286,44 +286,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Edit Service Field | Servora</title>
+    <title>Edit Service Field | Subnext</title>
 
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-
-    <script>
-
-        tailwind.config = {
-
-            theme: {
-
-                extend: {
-
-                    colors: {
-
-                        servora: {
-
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -825,7 +792,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="mt-8 border-t border-slate-200 pt-5 text-center">
 
         <p class="text-xs text-slate-400">
-            Servora Admin · Form Configuration
+            Subnext Admin · Form Configuration
         </p>
 
     </div>

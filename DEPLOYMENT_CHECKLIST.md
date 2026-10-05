@@ -1,4 +1,4 @@
-# Servora deployment checklist
+# Subnext deployment checklist
 
 1. Copy `.env.example` to `.env`; set `APP_ENV=production`, HTTPS `APP_URL`, database and provider/payment credentials.
 2. Keep `.env`, SQL dumps, test scripts and logs outside public access. The included `.htaccess` blocks common sensitive files.
@@ -10,5 +10,6 @@
 8. Put real API keys only in `.env`; never in PHP, JavaScript, screenshots, SQL dumps, or Git.
 9. Remove/deny development endpoints. This build returns 404 for known test/dev endpoints when `APP_ENV=production`.
 10. Run `php -l` on all PHP files, test registration/login/logout, wallet funding, callbacks, data purchase/refund/reconciliation, utility and foreign number flows, admin roles, maintenance/access controls, and mobile layouts before launch.
-11. Performance: enable Brotli/Gzip at hosting/CDN level, HTTP/2 or HTTP/3, PHP OPcache, image compression/WebP, and browser caching. Lighthouse scores depend on hosting, network, page content and third-party scripts, so a fixed 100 score cannot be guaranteed.
+11. Performance: enable Brotli/Gzip at hosting/CDN level, HTTP/2 or HTTP/3, PHP OPcache (`opcache.enable=1`), image compression/WebP, and browser caching. Ensure composite indexes (`idx_wt_user_id_desc`, `idx_uo_user_id_desc`, `idx_vno_user_id_desc`, `idx_do_user_id_desc`) are applied to MySQL.
 12. Back up both source code and the MySQL database before every production change.
+

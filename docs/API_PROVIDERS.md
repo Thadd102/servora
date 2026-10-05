@@ -1,12 +1,12 @@
-# Servora API Providers & Developer Integration Guide
+# Subnext API Providers & Developer Integration Guide
 
-This document records the official API providers, endpoints, authentication methods, environment configuration, and live activation instructions for all 7 digital services on the Servora platform.
+This document records the official API providers, endpoints, authentication methods, environment configuration, and live activation instructions for all 7 digital services on the Subnext platform.
 
 ---
 
 ## Architecture Summary
 
-Servora uses organized backend provider adapters located in `includes/`:
+Subnext uses organized backend provider adapters located in `includes/`:
 - `includes/CheapDataHubClient.php` & `includes/DataProviderProcessor.php` (Data bundles)
 - `includes/FiveSimProvider.php` & `includes/VirtualNumberProvider.php` (Foreign virtual numbers)
 - `includes/UtilityProvider.php` & `includes/UtilityOrderProcessor.php` (Airtime, Electricity, Cable TV, Bulk SMS, Exam PINs)
@@ -180,17 +180,17 @@ When live API keys are left blank in `.env`, the system operates in **safe sandb
   ```text
   TERMII_BASE_URL=https://api.ng.termii.com/api
   TERMII_API_KEY=
-  TERMII_SENDER_ID=Servora
+  TERMII_SENDER_ID=Subnext
   ```
 - **AUTHENTICATION**: JSON body with `api_key`
 - **SUPPORTED PRODUCTS**: High-priority DND delivery, OTP routes, and promotional messaging.
 - **IMPLEMENTED ENDPOINTS**:
   - Send SMS: `POST /api/sms/send`
-    - Payload: `{"to": "2348012345678", "from": "Servora", "sms": "Your message", "type": "plain", "channel": "generic", "api_key": "KEY"}`
+    - Payload: `{"to": "2348012345678", "from": "Subnext", "sms": "Your message", "type": "plain", "channel": "generic", "api_key": "KEY"}`
   - Check Balance: `GET /api/get-balance?api_key=KEY`
 - **LIVE ACTIVATION STEPS**:
   1. Register at `https://accounts.termii.com/register`.
-  2. Request a custom Sender ID (e.g. `Servora`) under Sender ID management.
+  2. Request a custom Sender ID (e.g. `Subnext`) under Sender ID management.
   3. Fund your Termii wallet.
   4. Copy your API Key and paste into `TERMII_API_KEY=` in `.env`.
 
@@ -221,7 +221,7 @@ When live API keys are left blank in `.env`, the system operates in **safe sandb
 
 ## 8. Financial Integrity & Transaction Rules
 
-Every transaction executed on Servora strictly follows this sequence:
+Every transaction executed on Subnext strictly follows this sequence:
 1. **Idempotency Token Validation**: Prevents double-clicking from submitting double charges.
 2. **Server-Side Pricing**: Prices are fetched and verified against current active admin pricing rules.
 3. **Pessimistic Row Locking (`SELECT ... FOR UPDATE`)**: Wallet balances are checked and updated inside an atomic database transaction.
@@ -236,7 +236,7 @@ Every transaction executed on Servora strictly follows this sequence:
 
 ## 9. Upstream Provider Balance Monitoring
 
-Servora includes a centralized balance monitoring engine:
+Subnext includes a centralized balance monitoring engine:
 - **Service Class**: `includes/ProviderBalanceService.php`
 - **AJAX Endpoint**: `admin/api_provider_balances.php`
 - **Dashboard UI**: Embedded inside `admin/dashboard.php`

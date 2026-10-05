@@ -1,4 +1,4 @@
-# Servora security & Paystack setup
+# Subnext security & Paystack setup
 
 ## Important: rotate old credentials
 The uploaded project contained hard-coded payment and SMTP credentials. They were removed from this cleaned copy. Rotate/revoke the old Paystack, Flutterwave and SMTP/app-password credentials in their provider dashboards before deploying.
@@ -55,7 +55,7 @@ Server environment values:
 Flutterwave cancellation is handled before transaction verification because a cancelled redirect may not contain a transaction_id.
 
 ## Multi-Provider Data Bundles (CheapDataHub & VTPass)
-Servora now supports dual upstream suppliers for data bundle purchases:
+Subnext now supports dual upstream suppliers for data bundle purchases:
 - **CheapDataHub** (Provider ID: 1, `cheapdatahub`)
 - **VTPass** (Provider ID: 8, `vtpass`)
 

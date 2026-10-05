@@ -278,30 +278,10 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Fund Client - Servora</title>
+    <title>Fund Client - Subnext</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -317,7 +297,7 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <div>
                     <h1 class="text-xl font-bold">
-                        Servora Admin
+                        Subnext Admin
                     </h1>
 
                     <p class="text-sm text-purple-200">

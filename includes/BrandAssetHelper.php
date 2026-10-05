@@ -1,7 +1,7 @@
 <?php
 
 /**
- * BrandAssetHelper - Servora Brand Logos & Country Flags Engine
+ * BrandAssetHelper - Subnext Brand Logos & Country Flags Engine
  * 
  * Provides authentic, high-definition SVG brand logos (WhatsApp, Telegram, Facebook,
  * Instagram, Google, TikTok, X, OpenAI, etc.) and crisp, pixel-perfect country flag badges.

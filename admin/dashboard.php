@@ -216,7 +216,7 @@ $totalUtilityProfit = (float)($utilityStats["total_profit"] ?? 0);
 */
 require_once __DIR__ . "/../includes/ProviderBalanceService.php";
 $balanceService = new ProviderBalanceService();
-$providerBalances = $balanceService->getAllBalances();
+$providerBalances = $balanceService->getCachedOrPlaceholderBalances();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -230,30 +230,10 @@ $providerBalances = $balanceService->getAllBalances();
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Admin Dashboard | Servora</title>
+    <title>Admin Dashboard | Subnext</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -300,7 +280,7 @@ $providerBalances = $balanceService->getAllBalances();
                             class="text-sm font-semibold
                             text-white/70"
                         >
-                            Servora
+                            Subnext
                         </p>
 
                         <p
@@ -419,8 +399,8 @@ $providerBalances = $balanceService->getAllBalances();
                     method="POST"
                     action="toggle_client_access.php"
                     onsubmit="return confirm('<?= $clientLoginEnabled
-                        ? "Lock Servora for all clients? Existing client sessions will be ended on their next request."
-                        : "Allow all active clients to access Servora again?"
+                        ? "Lock Subnext for all clients? Existing client sessions will be ended on their next request."
+                        : "Allow all active clients to access Subnext again?"
                     ?>');"
                 >
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
@@ -480,7 +460,7 @@ $providerBalances = $balanceService->getAllBalances();
                 <button
                     type="button"
                     id="btnRefreshBalances"
-                    onclick="refreshProviderBalances()"
+                    onclick="refreshProviderBalances(true)"
                     class="inline-flex min-h-[38px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 active:scale-95 shadow-xs"
                 >
                     <svg id="refreshSpinner" class="h-3.5 w-3.5 text-slate-500 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -504,12 +484,13 @@ $providerBalances = $balanceService->getAllBalances();
                 $isConn = ($p['status'] === 'connected');
                 $isErr = ($p['status'] === 'error');
                 $isUnconf = ($p['status'] === 'unconfigured');
+                $isLoading = ($p['status'] === 'loading');
 
                 $badgeClass = $isConn
                     ? (str_contains($p['environment'] ?? '', 'Sandbox') ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800')
-                    : ($isErr ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800');
+                    : ($isLoading ? 'bg-slate-100 text-slate-600 animate-pulse' : ($isErr ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'));
 
-                $badgeLabel = $isConn ? ($p['environment'] ?? 'Live') : ($isErr ? 'Error' : 'Unconfigured');
+                $badgeLabel = $isConn ? ($p['environment'] ?? 'Live') : ($isLoading ? 'Syncing...' : ($isErr ? 'Error' : 'Unconfigured'));
             ?>
                 <div
                     id="card-provider-<?= htmlspecialchars($pKey, ENT_QUOTES, 'UTF-8') ?>"
@@ -1361,7 +1342,7 @@ $providerBalances = $balanceService->getAllBalances();
                 text-slate-500"
             >
                 Manage the different parts
-                of your Servora platform.
+                of your Subnext platform.
             </p>
 
         </div>
@@ -2386,7 +2367,7 @@ $providerBalances = $balanceService->getAllBalances();
         class="py-8 text-center
         text-xs text-slate-400"
     >
-        Servora Administration
+        Subnext Administration
     </footer>
 
 </main>
@@ -2396,21 +2377,22 @@ $providerBalances = $balanceService->getAllBalances();
  * Asynchronously refresh upstream provider balances via secure AJAX
  * Provider credentials are NEVER exposed to the frontend browser.
  */
-async function refreshProviderBalances() {
+async function refreshProviderBalances(isManual = false) {
     const btn = document.getElementById('btnRefreshBalances');
     const spinner = document.getElementById('refreshSpinner');
     const timeSpan = document.getElementById('balancesLastChecked');
 
-    if (!btn || !spinner) return;
-
-    btn.disabled = true;
-    spinner.classList.add('animate-spin');
+    if (btn) btn.disabled = true;
+    if (spinner) spinner.classList.add('animate-spin');
 
     const balanceEls = document.querySelectorAll('[id^="balance-"]');
-    balanceEls.forEach(el => el.classList.add('opacity-40'));
+    if (isManual) {
+        balanceEls.forEach(el => el.classList.add('opacity-40'));
+    }
 
     try {
-        const response = await fetch('api_provider_balances.php', {
+        const url = isManual ? 'api_provider_balances.php?refresh=1' : 'api_provider_balances.php';
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -2463,10 +2445,15 @@ async function refreshProviderBalances() {
         console.error('Failed to refresh balances:', err);
     } finally {
         balanceEls.forEach(el => el.classList.remove('opacity-40'));
-        spinner.classList.remove('animate-spin');
-        btn.disabled = false;
+        if (spinner) spinner.classList.remove('animate-spin');
+        if (btn) btn.disabled = false;
     }
 }
+
+// Automatically sync live provider balances asynchronously without blocking initial render
+document.addEventListener('DOMContentLoaded', () => {
+    refreshProviderBalances(false);
+});
 </script>
 
 </body>

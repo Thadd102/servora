@@ -376,30 +376,10 @@ foreach ($providers as $provider) {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>API Providers | Servora Admin</title>
+    <title>API Providers | Subnext Admin</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -430,7 +410,7 @@ foreach ($providers as $provider) {
             <div class="mt-5">
 
                 <p class="text-sm font-semibold text-white/70">
-                    Servora Data Management
+                    Subnext Data Management
                 </p>
 
                 <h1
@@ -442,7 +422,7 @@ foreach ($providers as $provider) {
                 <p
                     class="mt-3 max-w-2xl text-sm leading-6 text-white/75 sm:text-base"
                 >
-                    Manage the suppliers that Servora uses to
+                    Manage the suppliers that Subnext uses to
                     process customer data purchases.
                 </p>
 
@@ -1056,7 +1036,7 @@ foreach ($providers as $provider) {
     <footer
         class="py-8 text-center text-xs text-slate-400"
     >
-        Servora API Provider Management
+        Subnext API Provider Management
     </footer>
 
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * UtilityProvider - Unified Provider Abstraction for Servora VTU Services
+ * UtilityProvider - Unified Provider Abstraction for Subnext VTU Services
  *
  * Covers:
  * 1. Airtime Top-Up (MTN, Airtel, Glo, 9mobile)
@@ -10,7 +10,7 @@
  * 4. Examination PINs (WAEC, NECO, JAMB, NABTEB)
  * 5. Bulk SMS (Targeted SMS Gateway)
  *
- * Adheres strictly to Servora PRD:
+ * Adheres strictly to Subnext PRD:
  * - Real API integration behind stable provider interface
  * - Confidential credentials & supplier cost never leaked to client
  * - Sandbox / fallback simulation when live credentials are empty
@@ -47,7 +47,7 @@ class UtilityProvider
         // Termii Live Credentials
         $this->termiiApiKey = trim((string)(getenv('TERMII_API_KEY') ?: ($_ENV['TERMII_API_KEY'] ?? '')));
         $this->termiiBaseUrl = rtrim((string)(getenv('TERMII_BASE_URL') ?: ($_ENV['TERMII_BASE_URL'] ?? 'https://api.ng.termii.com/api')), '/');
-        $this->termiiSenderId = trim((string)(getenv('TERMII_SENDER_ID') ?: ($_ENV['TERMII_SENDER_ID'] ?? 'Servora')));
+        $this->termiiSenderId = trim((string)(getenv('TERMII_SENDER_ID') ?: ($_ENV['TERMII_SENDER_ID'] ?? 'Subnext')));
 
         $this->vtuApiKey = trim((string)(getenv('VTU_PROVIDER_API_KEY') ?: ($_ENV['VTU_PROVIDER_API_KEY'] ?? '')));
         $this->vtuBaseUrl = rtrim((string)(getenv('VTU_PROVIDER_BASE_URL') ?: ($_ENV['VTU_PROVIDER_BASE_URL'] ?? '')), '/');

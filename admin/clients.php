@@ -78,30 +78,10 @@ foreach ($clients as $client) {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Clients | Servora Admin</title>
+    <title>Clients | Subnext Admin</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -175,7 +155,7 @@ foreach ($clients as $client) {
                     class="mt-1 text-sm <?= $clientLoginEnabled ? 'text-emerald-700' : 'text-red-700' ?>"
                 >
                     <?php if ($clientLoginEnabled): ?>
-                        Clients can currently access Servora normally.
+                        Clients can currently access Subnext normally.
                     <?php else: ?>
                         Client access is disabled. Existing client sessions will be ended on their next request.
                     <?php endif; ?>
@@ -187,8 +167,8 @@ foreach ($clients as $client) {
                 method="POST"
                 action="toggle_client_access.php"
                 onsubmit="return confirm('<?= $clientLoginEnabled
-                    ? "Lock Servora for all clients? Existing client sessions will be ended on their next request."
-                    : "Allow all active clients to access Servora again?"
+                    ? "Lock Subnext for all clients? Existing client sessions will be ended on their next request."
+                    : "Allow all active clients to access Subnext again?"
                 ?>');"
             >
 
@@ -713,7 +693,7 @@ foreach ($clients as $client) {
     <footer class="py-7 text-center">
 
         <p class="text-xs text-slate-400">
-            Servora Admin · Client Management
+            Subnext Admin · Client Management
         </p>
 
     </footer>

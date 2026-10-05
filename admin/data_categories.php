@@ -388,30 +388,10 @@ foreach ($categories as $category) {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Data Categories | Servora Admin</title>
+    <title>Data Categories | Subnext Admin</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -444,7 +424,7 @@ foreach ($categories as $category) {
                 <p
                     class="text-sm font-semibold text-white/70"
                 >
-                    Servora Data Management
+                    Subnext Data Management
                 </p>
 
                 <h1
@@ -1015,7 +995,7 @@ foreach ($categories as $category) {
     <footer
         class="py-8 text-center text-xs text-slate-400"
     >
-        Servora Data Category Management
+        Subnext Data Category Management
     </footer>
 
 

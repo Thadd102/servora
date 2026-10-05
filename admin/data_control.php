@@ -193,30 +193,10 @@ $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Data Control | Servora Admin</title>
+    <title>Data Control | Subnext Admin</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -246,7 +226,7 @@ $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </a>
 
                     <p class="text-sm font-semibold text-white/70">
-                        Servora Administration
+                        Subnext Administration
                     </p>
 
                     <h1 class="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
@@ -479,7 +459,7 @@ $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </h2>
 
             <p class="mt-1 text-sm text-slate-500">
-                Everything related to Servora data vending is available here.
+                Everything related to Subnext data vending is available here.
             </p>
 
         </div>
@@ -922,7 +902,7 @@ $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
     <footer class="py-8 text-center text-xs text-slate-400">
-        Servora Data Control Center
+        Subnext Data Control Center
     </footer>
 
 </main>

@@ -299,7 +299,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // Preserve financial transaction records required for reconciliation even when the client account is removed.
             // Do not execute a hard cascade DELETE which would corrupt order history, refunds, and financial audit logs.
             $anonymizedName  = "Closed Account #" . $userId;
-            $anonymizedEmail = "closed_" . $userId . "_" . time() . "@servora.internal";
+            $anonymizedEmail = "closed_" . $userId . "_" . time() . "@subnext.internal";
             $anonymizedPhone = "0000000000";
             $scrambledHash   = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
 
@@ -347,29 +347,9 @@ $memberSince = !empty($user["created_at"]) ? date("M d, Y", strtotime($user["cre
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile & Security - Servora</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF', 100: '#EDE9FE', 200: '#DDD6FE',
-                            500: '#635BDB', 600: '#5146C7', 700: '#3E37B7',
-                            800: '#312E81', 900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+    <title>My Profile & Security - Subnext</title>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
 
@@ -382,7 +362,7 @@ $memberSince = !empty($user["created_at"]) ? date("M d, Y", strtotime($user["cre
         <a href="dashboard.php" class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-700 text-lg font-black text-white shadow-sm">S</div>
             <div>
-                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Servora</div>
+                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Subnext</div>
                 <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Account & Security</div>
             </div>
         </a>
@@ -405,6 +385,12 @@ $memberSince = !empty($user["created_at"]) ? date("M d, Y", strtotime($user["cre
             <a href="profile.php" class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-100 font-bold text-servora-700 text-sm" title="My Profile">
                 <?= htmlspecialchars($profileInitial, ENT_QUOTES, "UTF-8") ?>
             </a>
+            <a href="../logout.php" class="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3.5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 hover:border-red-300" title="Logout">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span>Logout</span>
+            </a>
         </div>
     </div>
 </header>
@@ -416,13 +402,21 @@ $memberSince = !empty($user["created_at"]) ? date("M d, Y", strtotime($user["cre
 
     <!-- HERO BANNER CARD -->
     <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-servora-800 via-servora-700 to-servora-500 p-6 sm:p-8 text-white shadow-xl">
-        <a href="dashboard.php" class="text-sm font-semibold text-white/70 hover:text-white">
-            ← Dashboard
-        </a>
+        <div class="flex items-center justify-between">
+            <a href="dashboard.php" class="text-sm font-semibold text-white/70 hover:text-white">
+                ← Dashboard
+            </a>
+            <a href="../logout.php" class="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25 transition">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span>Logout</span>
+            </a>
+        </div>
 
         <div class="mt-6">
             <p class="text-sm font-semibold text-white/70">
-                Servora Profile
+                Subnext Profile
             </p>
             <h1 class="mt-1 text-3xl font-black">
                 <?= htmlspecialchars($user["full_name"], ENT_QUOTES, "UTF-8") ?>
@@ -784,6 +778,25 @@ $memberSince = !empty($user["created_at"]) ? date("M d, Y", strtotime($user["cre
                 </div>
             </section>
 
+            <!-- Card: Logout / Session (Final Option) -->
+            <section class="rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Account Session</h3>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Securely end your Subnext active session on this device.</p>
+                <a href="../logout.php" onclick="return confirm('Are you sure you want to log out of your Subnext account?')" class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50/80 px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-100 hover:border-red-300 active:scale-[0.98]">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    <span>Log Out of Subnext</span>
+                </a>
+            </section>
+
         </div>
 
     </div>
@@ -988,7 +1001,7 @@ $memberSince = !empty($user["created_at"]) ? date("M d, Y", strtotime($user["cre
                 </svg>
             </div>
             <div>
-                <h3 class="text-base font-bold text-slate-900">Delete Servora Account?</h3>
+                <h3 class="text-base font-bold text-slate-900">Delete Subnext Account?</h3>
                 <p class="text-[11px] text-red-600 font-semibold">This action cannot be undone.</p>
             </div>
         </div>

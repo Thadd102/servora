@@ -6,7 +6,7 @@ require_once __DIR__ . "/config/env.php";
 |--------------------------------------------------------------------------
 | Super Admin Creation Security Guard
 |--------------------------------------------------------------------------
-| Creates a new Servora Super Admin account.
+| Creates a new Subnext Super Admin account.
 | Only allowed when ALLOW_ADMIN_BOOTSTRAP=1 in the environment.
 |--------------------------------------------------------------------------
 */
@@ -23,8 +23,8 @@ if ((string)$allowBootstrap !== '1') {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>403 Forbidden - Servora</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <title>403 Forbidden - Subnext</title>
+        <link rel="stylesheet" href="assets/css/style.css">
     </head>
     <body class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div class="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
@@ -231,7 +231,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Create Super Admin | Servora</title>
+    <title>Create Super Admin | Subnext</title>
 
     <style>
 
@@ -356,7 +356,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <h1>Create Super Admin</h1>
 
         <p class="description">
-            Create a Servora Super Administrator account.
+            Create a Subnext Super Administrator account.
         </p>
 
 

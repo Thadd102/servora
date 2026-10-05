@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ========================= */
 
     if ($isMaintenanceActive) {
-        $error = "Registration is temporarily paused while Servora is in maintenance mode. Please try again later.";
+        $error = "Registration is temporarily paused while Subnext is in maintenance mode. Please try again later.";
 
     } elseif (
         empty($_POST['csrf_token']) ||
@@ -232,37 +232,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Create Account - Servora</title>
+    <title>Create Account - Subnext</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="description" content="Create a Subnext account to get fast, reliable data, airtime, bills payment, and simplified digital services.">
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="assets/css/style.css">
 
 </head>
 
 <body class="min-h-screen bg-[#F6F7FB]">
 
-    <div class="min-h-screen flex items-center justify-center px-4 py-8">
+    <main class="min-h-screen flex items-center justify-center px-4 py-8">
 
         <div class="w-full max-w-lg">
 
@@ -289,11 +270,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     tracking-tight
                     text-gray-900"
                 >
-                    Servora
+                    Subnext
                 </h1>
 
                 <p class="mt-1 text-sm text-gray-500">
-                    Your Services, Simplified.
+                    Digital Services, Simplified.
                 </p>
 
             </div>
@@ -341,7 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         leading-relaxed
                         text-gray-500"
                     >
-                        Create your Servora account and start accessing
+                        Create your Subnext account and start accessing
                         available services.
                     </p>
 
@@ -363,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div>
                                 <p class="text-sm font-bold">
-                                    Servora is Under Maintenance
+                                    Subnext is Under Maintenance
                                 </p>
                                 <p class="mt-1 text-xs text-amber-800 leading-relaxed">
                                     New client account registrations are temporarily paused while scheduled system maintenance is underway. If you are an administrator, you can <a href="login.php" class="font-bold underline text-amber-950 hover:text-amber-800">log in here</a>.
@@ -685,7 +666,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     leading-relaxed
                                     text-gray-600"
                                 >
-                                    Servora provides a platform for submitting
+                                    Subnext provides a platform for submitting
                                     service requests and receiving processed
                                     results. You are responsible for providing
                                     accurate information and documents.
@@ -709,7 +690,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 leading-relaxed
                                 text-gray-600"
                             >
-                                Servora will process your information only for
+                                Subnext will process your information only for
                                 the purpose of handling your requested service.
                                 You should not submit information that you are
                                 not authorized to provide.
@@ -770,7 +751,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             >
                                 I have read and understood the disclaimer
                                 and agree to provide accurate information
-                                when using Servora.
+                                when using Subnext.
                             </span>
 
                         </label>
@@ -834,17 +815,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p
                 class="text-center
                 text-xs
-                text-gray-400
+                text-gray-500
                 mt-6"
             >
-                © <?= date('Y') ?> Servora. All rights reserved.
+                © <?= date('Y') ?> Subnext. All rights reserved.
             </p>
 
         </div>
 
-    </div>
+    </main>
 
 </body>
 
 </html>
-```

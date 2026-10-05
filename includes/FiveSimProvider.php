@@ -256,27 +256,54 @@ class FiveSimProvider
             return $this->cachedProductPrices[$serviceCode];
         }
 
+        $cleanKey = preg_replace('/[^a-z0-9_-]/i', '', $serviceCode);
+        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'subnext_5sim_prices_' . $cleanKey . '.json';
+        if (file_exists($cacheFile)) {
+            $mtime = @filemtime($cacheFile);
+            if ($mtime !== false && (time() - $mtime) < 300) { // 5 minutes TTL
+                $cached = @json_decode((string)@file_get_contents($cacheFile), true);
+                if (is_array($cached) && !empty($cached)) {
+                    $this->cachedProductPrices[$serviceCode] = $cached;
+                    return $cached;
+                }
+            }
+        }
+
         $url = $this->baseUrl . "/guest/prices?product=" . urlencode($serviceCode);
         $res = $this->httpGet($url);
 
         if ($res['ok'] && is_array($res['data'])) {
             $data = $res['data'];
             // 5SIM returns either [$serviceCode => [country => ...]] or [country => [$serviceCode => ...]]
+            $result = [];
             if (isset($data[$serviceCode]) && is_array($data[$serviceCode])) {
-                $this->cachedProductPrices[$serviceCode] = $data[$serviceCode];
-                return $data[$serviceCode];
-            }
-
-            // Invert if keyed by country
-            $byCountry = [];
-            foreach ($data as $cName => $cServices) {
-                if (isset($cServices[$serviceCode])) {
-                    $byCountry[$cName] = $cServices[$serviceCode];
+                $result = $data[$serviceCode];
+            } else {
+                // Invert if keyed by country
+                $byCountry = [];
+                foreach ($data as $cName => $cServices) {
+                    if (isset($cServices[$serviceCode])) {
+                        $byCountry[$cName] = $cServices[$serviceCode];
+                    }
+                }
+                if (!empty($byCountry)) {
+                    $result = $byCountry;
                 }
             }
-            if (!empty($byCountry)) {
-                $this->cachedProductPrices[$serviceCode] = $byCountry;
-                return $byCountry;
+
+            if (!empty($result)) {
+                $this->cachedProductPrices[$serviceCode] = $result;
+                @file_put_contents($cacheFile, json_encode($result, JSON_UNESCAPED_SLASHES));
+                return $result;
+            }
+        }
+
+        // If remote fetch failed, check if stale cache exists to keep page working
+        if (file_exists($cacheFile)) {
+            $stale = @json_decode((string)@file_get_contents($cacheFile), true);
+            if (is_array($stale) && !empty($stale)) {
+                $this->cachedProductPrices[$serviceCode] = $stale;
+                return $stale;
             }
         }
 

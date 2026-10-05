@@ -193,28 +193,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sync VTPass Data Bundles | Servora Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Sync VTPass Data Bundles | Subnext Admin</title>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
 
@@ -238,7 +219,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </h1>
         <p class="mt-2 max-w-2xl text-sm text-purple-100/80">
             Automatically fetch official VTPass variation codes for MTN, Airtel, Glo, and 9mobile/T2.
-            Servora will calculate customer selling prices using your configurable profit markup (default: ₦50.00).
+            Subnext will calculate customer selling prices using your configurable profit markup (default: ₦50.00).
         </p>
     </section>
 
@@ -264,7 +245,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Active VTPass Plans</p>
             <p class="mt-1 text-lg font-bold text-slate-800"><?= $currentVtpassCount ?> Plans</p>
-            <p class="mt-1 text-xs text-slate-500">Currently in Servora catalog</p>
+            <p class="mt-1 text-xs text-slate-500">Currently in Subnext catalog</p>
         </div>
     </div>
 
@@ -308,7 +289,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h2 class="text-xl font-black text-slate-900">Run Synchronization</h2>
         <p class="mt-1 text-sm text-slate-500">
-            This tool queries the official VTPass API for real variation codes across all 4 networks and imports or updates them in Servora.
+            This tool queries the official VTPass API for real variation codes across all 4 networks and imports or updates them in Subnext.
         </p>
 
         <form method="POST" class="mt-6 space-y-6">

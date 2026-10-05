@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Simple .env loader for Servora.
+ * Simple .env loader for Subnext.
  *
  * Loads variables from:
  * service-platform/.env

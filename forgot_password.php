@@ -108,22 +108,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $mail = new PHPMailer(true);
 
                     $mail->isSMTP();
-                    $mail->Host = "smtp.gmail.com";
+                    $mail->Host = getenv("SMTP_HOST") ?: "smtp.gmail.com";
                     $mail->SMTPAuth = true;
 
                     // Keep your working Gmail details here
                     $mail->Username = getenv("SMTP_USERNAME") ?: "";
                     $mail->Password = getenv("SMTP_PASSWORD") ?: "";
 
-                    $mail->SMTPSecure =
-                        PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = (int) (getenv("SMTP_PORT") ?: 587);
 
-                    $mail->Port = 587;
+                    $fromName = getenv("SMTP_FROM_NAME") ?: "Subnext";
+                    $fromEmail = getenv("SMTP_FROM_EMAIL") ?: ($mail->Username ?: "support@subnext.com.ng");
 
-                    $mail->setFrom(
-                        $mail->Username,
-                        "Servora"
-                    );
+                    $mail->setFrom($fromEmail, $fromName);
 
                     $mail->addAddress(
                         $user["email"],
@@ -132,50 +130,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     $mail->isHTML(true);
 
-                    $mail->Subject =
-                        "Servora Password Reset OTP";
+                    $mail->Subject = "Your Subnext Verification Code";
 
                     $mail->Body = "
-                        <div style='font-family:Arial,sans-serif;line-height:1.6'>
+                        <div style='max-width:540px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#1e293b;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;padding:32px 28px;background:#ffffff;'>
 
-                            <h2>Servora</h2>
+                            <div style='text-align:center;margin-bottom:24px;'>
+                                <div style='display:inline-block;width:44px;height:44px;line-height:44px;background:#3E37B7;color:#ffffff;font-size:22px;font-weight:900;border-radius:12px;'>S</div>
+                                <h1 style='margin:12px 0 2px 0;font-size:24px;font-weight:800;color:#0f172a;letter-spacing:-0.02em;'>Subnext</h1>
+                                <p style='margin:0;font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;'>Digital Services, Simplified.</p>
+                            </div>
 
-                            <p>
-                                Hello " .
-                                htmlspecialchars($user["full_name"]) .
-                                ",
+                            <p style='font-size:15px;margin:0 0 16px 0;'>
+                                Hello <strong>" . htmlspecialchars($user["full_name"], ENT_QUOTES, "UTF-8") . "</strong>,
                             </p>
 
-                            <p>
-                                Your password reset OTP is:
+                            <p style='font-size:14px;color:#475569;margin:0 0 20px 0;'>
+                                We received a request to verify your identity and reset your Subnext account password. Please use the verification code below:
                             </p>
 
-                            <h1 style='letter-spacing:6px'>
-                                {$otp}
-                            </h1>
+                            <div style='background-color:#F5F3FF;border:2px dashed #635BDB;border-radius:14px;padding:22px;text-align:center;margin:24px 0;'>
+                                <span style='font-size:11px;font-weight:700;color:#635BDB;text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:6px;'>Your One-Time Passcode</span>
+                                <span style='font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace;font-size:36px;font-weight:900;letter-spacing:10px;color:#3E37B7;display:inline-block;padding-left:10px;'>{$otp}</span>
+                            </div>
 
-                            <p>
-                                This OTP expires in
-                                <strong>10 minutes</strong>.
+                            <p style='font-size:13px;color:#475569;margin:0 0 14px 0;'>
+                                ⏱️ This verification code is valid for <strong>10 minutes</strong>.
                             </p>
 
-                            <p>
-                                If you did not request this,
-                                simply ignore this email.
+                            <p style='font-size:12px;color:#64748b;background:#f8fafc;border-left:3px solid #cbd5e1;padding:10px 14px;margin:0 0 24px 0;border-radius:4px;'>
+                                🔒 <strong>Security Notice:</strong> Never share this verification code with anyone. Subnext representatives will never ask for your code.
                             </p>
 
-                            <p>
-                                Regards,<br>
-                                <strong>Servora</strong>
+                            <p style='font-size:13px;color:#64748b;margin:0 0 28px 0;'>
+                                If you did not make this request, you can safely ignore this email — your account remains completely secure.
                             </p>
+
+                            <p style='font-size:13px;color:#334155;margin:0;'>
+                                Warm regards,<br>
+                                <strong>Team Subnext</strong>
+                            </p>
+
+                            <div style='margin-top:32px;padding-top:20px;border-top:1px solid #f1f5f9;text-align:center;font-size:11px;color:#94a3b8;'>
+                                <p style='margin:0 0 4px 0;font-weight:600;'>Subnext • Digital Services, Simplified.</p>
+                                <p style='margin:0 0 4px 0;'>https://subnext.com.ng • support@subnext.com.ng</p>
+                                <p style='margin:0;'>© " . date('Y') . " Subnext. All rights reserved.</p>
+                            </div>
 
                         </div>
                     ";
 
                     $mail->AltBody =
-                        "Your Servora password reset OTP is "
-                        . $otp
-                        . ". It expires in 10 minutes.";
+                        "Hello " . $user["full_name"] . ",\n\n"
+                        . "Your Subnext verification code is: " . $otp . "\n\n"
+                        . "This code expires in 10 minutes. Never share this code with anyone.\n"
+                        . "If you did not request this, please ignore this email.\n\n"
+                        . "Subnext - Digital Services, Simplified.\n"
+                        . "https://subnext.com.ng • support@subnext.com.ng";
 
                     $mail->send();
 
@@ -219,7 +230,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Forgot Password | Servora</title>
+    <title>Forgot Password | Subnext</title>
 
     <style>
 
@@ -310,7 +321,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <div class="card">
 
-    <div class="logo">Servora</div>
+    <div class="logo">Subnext</div>
+    <p style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; margin-bottom: 14px;">Digital Services, Simplified.</p>
 
     <p class="subtitle">
         Reset your password
@@ -345,7 +357,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         >
 
         <button type="submit">
-            Send OTP
+            Send Verification Code
         </button>
 
     </form>
@@ -353,6 +365,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <a href="login.php" class="back">
         Back to Login
     </a>
+
+    <p style="margin-top: 24px; font-size: 11px; color: #94a3b8; text-align: center;">© <?= date('Y') ?> Subnext. All rights reserved.</p>
 
 </div>
 

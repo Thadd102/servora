@@ -203,30 +203,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Edit Data Plan | Servora</title>
+    <title>Edit Data Plan | Subnext</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -500,7 +480,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <!-- SELLING PRICE -->
             <div>
                 <label class="mb-2 block text-sm font-bold text-slate-800">
-                    Servora Selling Price (₦)
+                    Subnext Selling Price (₦)
                 </label>
                 <input
                     type="number"

@@ -649,7 +649,7 @@ class DataProviderProcessor
             return [
                 "success" => false,
                 "state" => "requires_review",
-                "message" => "Supplier rejected the request, but Servora could not safely prepare the refund."
+                "message" => "Supplier rejected the request, but Subnext could not safely prepare the refund."
             ];
         }
 

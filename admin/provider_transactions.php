@@ -289,30 +289,10 @@ function e($value): string
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Provider Transactions | Servora Admin</title>
+    <title>Provider Transactions | Subnext Admin</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -345,7 +325,7 @@ function e($value): string
                 <p
                     class="text-sm font-semibold text-white/70"
                 >
-                    Servora Data Management
+                    Subnext Data Management
                 </p>
 
                 <h1
@@ -357,7 +337,7 @@ function e($value): string
                 <p
                     class="mt-3 max-w-3xl text-sm leading-6 text-white/75 sm:text-base"
                 >
-                    Monitor communication between Servora and
+                    Monitor communication between Subnext and
                     your data API providers.
                 </p>
 
@@ -1425,7 +1405,7 @@ function e($value): string
             <p
                 class="mt-1 text-xs leading-5 text-amber-700"
             >
-                Servora is still waiting for a confirmed result.
+                Subnext is still waiting for a confirmed result.
             </p>
 
         </div>
@@ -1467,7 +1447,7 @@ function e($value): string
     <footer
         class="py-8 text-center text-xs text-slate-400"
     >
-        Servora Provider Transaction Monitoring
+        Subnext Provider Transaction Monitoring
     </footer>
 
 

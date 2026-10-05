@@ -38,7 +38,7 @@ $message = "";
 $isMaintenanceMessage = false;
 
 if (isset($_GET["account_closed"])) {
-    $message = "Your Servora account has been successfully closed and credentials deactivated. All audit and financial records have been archived.";
+    $message = "Your Subnext account has been successfully closed and credentials deactivated. All audit and financial records have been archived.";
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -102,7 +102,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // Admin and super_admin accounts are not affected.
             // ------------------------------------------------------------
             if ($user["role"] === "client" && $isMaintenanceActive) {
-                $message = "Servora is temporarily under maintenance. Client access is currently unavailable. Please try again later.";
+                $message = "Subnext is temporarily under maintenance. Client access is currently unavailable. Please try again later.";
                 $isMaintenanceMessage = true;
             }
 
@@ -145,7 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 } else {
     // GET Request: Only show maintenance message if maintenance is genuinely ACTIVE
     if ($isMaintenanceActive) {
-        $message = "Servora is currently under maintenance. Client access is temporarily paused. Admin login remains available.";
+        $message = "Subnext is currently under maintenance. Client access is temporarily paused. Admin login remains available.";
         $isMaintenanceMessage = true;
     } elseif (($_GET["timeout"] ?? "") === "1") {
         $message = "Your session expired due to inactivity. Please log in again.";
@@ -167,37 +167,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Login - Servora</title>
+    <title>Login - Subnext</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="description" content="Sign in to your Subnext account to manage data bundles, airtime, cable TV, electricity, and digital services securely.">
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        servora: {
-                            50: '#F5F3FF',
-                            100: '#EDE9FE',
-                            200: '#DDD6FE',
-                            500: '#635BDB',
-                            600: '#5146C7',
-                            700: '#3E37B7',
-                            800: '#312E81',
-                            900: '#1E1B4B'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="assets/css/style.css">
 
 </head>
 
 <body class="min-h-screen bg-[#F6F7FB]">
 
-    <div class="min-h-screen flex flex-col lg:flex-row">
+    <main class="min-h-screen flex flex-col lg:flex-row">
 
         <!-- LEFT BRAND SECTION -->
         <div
@@ -243,7 +224,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
 
                         <span class="text-3xl font-bold tracking-tight">
-                            Servora
+                            Subnext
                         </span>
 
                     </div>
@@ -255,9 +236,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     font-bold leading-tight
                     max-w-xl"
                 >
-                    Your services,
+                    Digital Services,
                     <span class="text-purple-200">
-                        simplified.
+                        Simplified.
                     </span>
                 </h1>
 
@@ -337,11 +318,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         font-bold
                         text-gray-900"
                     >
-                        Servora
+                        Subnext
                     </h1>
 
                     <p class="text-sm text-gray-500 mt-1">
-                        Your Services, Simplified.
+                        Digital Services, Simplified.
                     </p>
 
                 </div>
@@ -375,7 +356,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             font-bold
                             text-gray-900"
                         >
-                            Sign in to Servora
+                            Sign in to Subnext
                         </h2>
 
                         <p
@@ -416,7 +397,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                     <div>
 
                                         <p class="text-sm font-bold">
-                                            Servora is under maintenance
+                                            Subnext is under maintenance
                                         </p>
 
                                         <p class="mt-1 text-sm leading-5">
@@ -678,17 +659,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <p
                     class="text-center
                     text-xs
-                    text-gray-400
+                    text-gray-500
                     mt-6"
                 >
-                    © <?= date('Y') ?> Servora. All rights reserved.
+                    © <?= date('Y') ?> Subnext. All rights reserved.
                 </p>
 
             </div>
 
         </div>
 
-    </div>
+    </main>
 
 </body>
 

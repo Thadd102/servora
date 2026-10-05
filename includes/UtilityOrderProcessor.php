@@ -223,7 +223,7 @@ class UtilityOrderProcessor
 
                 case 'bulk_sms':
                     $recipients = (array)($extraPayload['recipients'] ?? [$customerIdentifier]);
-                    $senderId = (string)($extraPayload['sender_id'] ?? 'SERVORA');
+                    $senderId = (string)($extraPayload['sender_id'] ?? 'SUBNEXT');
                     $msgText = (string)($extraPayload['message'] ?? '');
                     $providerResult = $this->provider->sendBulkSms($senderId, $recipients, $msgText, $internalRef);
                     break;

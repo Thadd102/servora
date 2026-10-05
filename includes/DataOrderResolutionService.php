@@ -179,7 +179,7 @@ class DataOrderResolutionService
 
             return $this->fail(
                 "cross_order_collision",
-                "Another Servora order could match this supplier transaction."
+                "Another Subnext order could match this supplier transaction."
             );
         }
 

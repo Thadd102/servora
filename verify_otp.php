@@ -120,7 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Verify OTP | Servora</title>
+    <title>Verify OTP | Subnext</title>
 
     <style>
 
@@ -204,10 +204,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <div class="card">
 
-    <div class="logo">Servora</div>
+    <div class="logo">Subnext</div>
+    <p style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; margin-bottom: 14px;">Digital Services, Simplified.</p>
 
     <p>
-        Enter the 6-digit OTP sent to your email.
+        Enter the 6-digit verification code sent to your email.
     </p>
 
     <?php if ($error): ?>
@@ -238,14 +239,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         >
 
         <button type="submit">
-            Verify OTP
+            Verify Code
         </button>
 
     </form>
 
     <a href="forgot_password.php">
-        Request New OTP
+        Request New Code
     </a>
+
+    <p style="margin-top: 24px; font-size: 11px; color: #94a3b8; text-align: center;">© <?= date('Y') ?> Subnext. All rights reserved.</p>
 
 </div>
 
