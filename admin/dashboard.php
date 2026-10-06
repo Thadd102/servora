@@ -518,7 +518,14 @@ $providerBalances = $balanceService->getCachedOrPlaceholderBalances();
                                 id="badge-<?= htmlspecialchars($pKey, ENT_QUOTES, 'UTF-8') ?>"
                                 class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider <?= $badgeClass ?>"
                             >
-                                <?= htmlspecialchars($badgeLabel, ENT_QUOTES, 'UTF-8') ?>
+                                <?php if ($isLoading): ?>
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="h-2.5 w-2.5 animate-spin text-slate-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                                        <span>Syncing</span>
+                                    </span>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($badgeLabel, ENT_QUOTES, 'UTF-8') ?>
+                                <?php endif; ?>
                             </span>
                         </div>
 
@@ -526,12 +533,16 @@ $providerBalances = $balanceService->getCachedOrPlaceholderBalances();
                             <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                                 Available Balance
                             </p>
-                            <p
+                            <div
                                 id="balance-<?= htmlspecialchars($pKey, ENT_QUOTES, 'UTF-8') ?>"
-                                class="mt-0.5 text-xl sm:text-2xl font-black text-slate-900 tracking-tight transition-opacity"
+                                class="mt-0.5 min-h-[32px] flex items-center"
                             >
-                                <?= htmlspecialchars($p['formatted'], ENT_QUOTES, 'UTF-8') ?>
-                            </p>
+                                <?php if ($isLoading): ?>
+                                    <span class="inline-block h-6 w-28 animate-pulse rounded-lg bg-slate-200"></span>
+                                <?php else: ?>
+                                    <span class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight transition-opacity"><?= htmlspecialchars($p['formatted'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
 
@@ -541,7 +552,11 @@ $providerBalances = $balanceService->getCachedOrPlaceholderBalances();
                             class="text-[11px] text-slate-500 truncate"
                             title="<?= htmlspecialchars($p['extra_info'] ?? $p['message'], ENT_QUOTES, 'UTF-8') ?>"
                         >
-                            <?= htmlspecialchars($p['extra_info'] ?? $p['message'], ENT_QUOTES, 'UTF-8') ?>
+                            <?php if ($isLoading): ?>
+                                <span class="inline-block h-3 w-32 animate-pulse rounded bg-slate-200/70"></span>
+                            <?php else: ?>
+                                <?= htmlspecialchars($p['extra_info'] ?? $p['message'], ENT_QUOTES, 'UTF-8') ?>
+                            <?php endif; ?>
                         </p>
                     </div>
                 </div>
@@ -2377,6 +2392,127 @@ $providerBalances = $balanceService->getCachedOrPlaceholderBalances();
  * Asynchronously refresh upstream provider balances via secure AJAX
  * Provider credentials are NEVER exposed to the frontend browser.
  */
+/**
+ * Asynchronously fetch and refresh upstream provider balances independently.
+ * Each provider queries its endpoint in parallel with dedicated timeouts and skeleton loading.
+ * One failing or slow provider never delays or blocks the others.
+ */
+async function fetchSingleProviderBalance(key, isManual = false) {
+    const balEl = document.getElementById('balance-' + key);
+    const badgeEl = document.getElementById('badge-' + key);
+    const msgEl = document.getElementById('msg-' + key);
+
+    // Show lightweight modern skeleton animation while fetching
+    if (badgeEl) {
+        badgeEl.className = 'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500';
+        badgeEl.innerHTML = '<span class="inline-flex items-center gap-1.5"><svg class="h-2.5 w-2.5 animate-spin text-slate-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg><span>Syncing</span></span>';
+    }
+
+    if (balEl) {
+        balEl.innerHTML = '<span class="inline-block h-6 w-28 animate-pulse rounded-lg bg-slate-200"></span>';
+    }
+
+    if (msgEl) {
+        msgEl.innerHTML = '<span class="inline-block h-3 w-32 animate-pulse rounded bg-slate-200/70"></span>';
+        msgEl.title = 'Syncing live balance...';
+    }
+
+    // Set 6-second client-side timeout so requests can NEVER hang indefinitely
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    try {
+        const url = 'api_provider_balances.php?provider=' + encodeURIComponent(key) + (isManual ? '&refresh=1' : '');
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+
+        const data = await response.json();
+        const p = data.balance;
+
+        if (p) {
+            renderProviderResult(key, p);
+        } else {
+            renderProviderError(key, 'Unable to parse provider response');
+        }
+    } catch (err) {
+        clearTimeout(timeoutId);
+        const errorText = err.name === 'AbortError' ? 'Request timed out' : 'Unable to connect to supplier';
+        renderProviderError(key, errorText);
+    }
+}
+
+function renderProviderResult(key, p) {
+    const balEl = document.getElementById('balance-' + key);
+    const badgeEl = document.getElementById('badge-' + key);
+    const msgEl = document.getElementById('msg-' + key);
+
+    if (p.status === 'connected') {
+        if (balEl) {
+            balEl.innerHTML = '<span class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">' + escapeHtml(p.formatted || '₦0.00') + '</span>';
+        }
+        if (badgeEl) {
+            const isSandbox = (p.environment || '').includes('Sandbox');
+            badgeEl.className = 'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ' +
+                (isSandbox ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800');
+            badgeEl.textContent = p.environment || 'Live';
+        }
+        if (msgEl) {
+            const text = p.extra_info || p.message || 'Connected';
+            msgEl.textContent = text;
+            msgEl.title = text;
+        }
+    } else if (p.status === 'unconfigured') {
+        if (balEl) {
+            balEl.innerHTML = '<span class="text-base sm:text-lg font-bold text-slate-500">Not configured</span>';
+        }
+        if (badgeEl) {
+            badgeEl.className = 'inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-800';
+            badgeEl.textContent = 'Not configured';
+        }
+        if (msgEl) {
+            const text = p.message || 'API credentials are empty in .env';
+            msgEl.textContent = text;
+            msgEl.title = text;
+        }
+    } else {
+        renderProviderError(key, p.message || 'Unable to fetch');
+    }
+}
+
+function renderProviderError(key, message) {
+    const balEl = document.getElementById('balance-' + key);
+    const badgeEl = document.getElementById('badge-' + key);
+    const msgEl = document.getElementById('msg-' + key);
+
+    if (balEl) {
+        balEl.innerHTML = '<span class="text-base sm:text-lg font-bold text-rose-600">Unable to fetch</span>';
+    }
+    if (badgeEl) {
+        badgeEl.className = 'inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-800';
+        badgeEl.textContent = 'Unable to fetch';
+    }
+    if (msgEl) {
+        msgEl.textContent = message || 'Connection error';
+        msgEl.title = message || 'Connection error';
+    }
+}
+
+function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
 async function refreshProviderBalances(isManual = false) {
     const btn = document.getElementById('btnRefreshBalances');
     const spinner = document.getElementById('refreshSpinner');
@@ -2385,69 +2521,18 @@ async function refreshProviderBalances(isManual = false) {
     if (btn) btn.disabled = true;
     if (spinner) spinner.classList.add('animate-spin');
 
-    const balanceEls = document.querySelectorAll('[id^="balance-"]');
-    if (isManual) {
-        balanceEls.forEach(el => el.classList.add('opacity-40'));
+    const providers = ['cheapdatahub', 'fivesim', 'vtpass', 'termii'];
+
+    // Dispatch queries concurrently - each provider loads and updates its card independently
+    await Promise.allSettled(providers.map(key => fetchSingleProviderBalance(key, isManual)));
+
+    if (timeSpan) {
+        const now = new Date();
+        timeSpan.textContent = 'Checked: ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    try {
-        const url = isManual ? 'api_provider_balances.php?refresh=1' : 'api_provider_balances.php';
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('HTTP ' + response.status);
-        }
-
-        const data = await response.json();
-        if (data.ok && data.balances) {
-            if (timeSpan && data.human_time) {
-                timeSpan.textContent = 'Checked: ' + data.human_time;
-            }
-
-            for (const [key, p] of Object.entries(data.balances)) {
-                const balEl = document.getElementById('balance-' + key);
-                const badgeEl = document.getElementById('badge-' + key);
-                const msgEl = document.getElementById('msg-' + key);
-
-                if (balEl) {
-                    balEl.textContent = p.formatted || 'Unavailable';
-                }
-
-                if (badgeEl) {
-                    badgeEl.className = 'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ';
-                    if (p.status === 'connected') {
-                        const isSandbox = (p.environment || '').includes('Sandbox');
-                        badgeEl.className += isSandbox ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800';
-                        badgeEl.textContent = p.environment || 'Live';
-                    } else if (p.status === 'error') {
-                        badgeEl.className += 'bg-red-100 text-red-800';
-                        badgeEl.textContent = 'Error';
-                    } else {
-                        badgeEl.className += 'bg-amber-100 text-amber-800';
-                        badgeEl.textContent = 'Unconfigured';
-                    }
-                }
-
-                if (msgEl) {
-                    const text = p.extra_info || p.message || '';
-                    msgEl.textContent = text;
-                    msgEl.title = text;
-                }
-            }
-        }
-    } catch (err) {
-        console.error('Failed to refresh balances:', err);
-    } finally {
-        balanceEls.forEach(el => el.classList.remove('opacity-40'));
-        if (spinner) spinner.classList.remove('animate-spin');
-        if (btn) btn.disabled = false;
-    }
+    if (spinner) spinner.classList.remove('animate-spin');
+    if (btn) btn.disabled = false;
 }
 
 // Automatically sync live provider balances asynchronously without blocking initial render

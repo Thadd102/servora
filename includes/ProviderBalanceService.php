@@ -77,17 +77,14 @@ class ProviderBalanceService
     }
 
     /**
-     * Retrieve live balances across all registered upstream providers.
-     *
-     * Every provider is queried independently inside isolated error handlers.
-     * Failure of one API will not prevent subsequent providers from loading.
-     *
-     * @return array<string, array> Keyed list of normalized provider balance payloads.
+     * Query a single provider balance independently.
+     * Allows asynchronous per-provider AJAX without blocking other providers.
      */
-    public function getAllBalances(bool $forceRefresh = false): array
+    public function getBalanceForProvider(string $providerKey, bool $forceRefresh = false): ?array
     {
-        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'subnext_provider_balances.json';
-        $cacheTtl = 180; // 3 minutes
+        $providerKey = strtolower(trim($providerKey));
+        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'subnext_balance_' . $providerKey . '.json';
+        $cacheTtl = 120; // 2 minutes
 
         if (!$forceRefresh && file_exists($cacheFile)) {
             $mtime = @filemtime($cacheFile);
@@ -99,66 +96,47 @@ class ProviderBalanceService
             }
         }
 
+        $result = match ($providerKey) {
+            'cheapdatahub' => $this->getCheapDataHubBalance(),
+            'fivesim' => $this->getFiveSimBalance(),
+            'vtpass' => $this->getVtpassBalance(),
+            'termii' => $this->getTermiiBalance(),
+            default => null,
+        };
+
+        if ($result !== null) {
+            @file_put_contents($cacheFile, json_encode($result, JSON_UNESCAPED_SLASHES));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Retrieve live balances across all registered upstream providers.
+     *
+     * Every provider is queried independently inside isolated error handlers.
+     * Failure of one API will not prevent subsequent providers from loading.
+     *
+     * @return array<string, array> Keyed list of normalized provider balance payloads.
+     */
+    public function getAllBalances(bool $forceRefresh = false): array
+    {
         $balances = [];
+        $providers = ['cheapdatahub', 'fivesim', 'vtpass', 'termii'];
 
-        // 1. CheapDataHub (Data & Airtime)
-        try {
-            $balances['cheapdatahub'] = $this->getCheapDataHubBalance();
-        } catch (\Throwable $e) {
-            $balances['cheapdatahub'] = $this->buildErrorPayload(
-                'cheapdatahub',
-                'CheapDataHub',
-                'Data & Airtime',
-                '₦',
-                'NGN',
-                'Exception: ' . $e->getMessage()
-            );
-        }
-
-        // 2. 5SIM (Foreign Virtual Numbers)
-        try {
-            $balances['fivesim'] = $this->getFiveSimBalance();
-        } catch (\Throwable $e) {
-            $balances['fivesim'] = $this->buildErrorPayload(
-                'fivesim',
-                '5SIM',
-                'Foreign Virtual Numbers',
-                '$',
-                'USD',
-                'Exception: ' . $e->getMessage()
-            );
-        }
-
-        // 3. VTpass (Data, Electricity, Cable TV, Exam PINs)
-        try {
-            $balances['vtpass'] = $this->getVtpassBalance();
-        } catch (\Throwable $e) {
-            $balances['vtpass'] = $this->buildErrorPayload(
-                'vtpass',
-                'VTpass',
-                'Data, Utilities & Exams',
-                '₦',
-                'NGN',
-                'Exception: ' . $e->getMessage()
-            );
-        }
-
-        // 4. Termii (Bulk SMS Gateway)
-        try {
-            $balances['termii'] = $this->getTermiiBalance();
-        } catch (\Throwable $e) {
-            $balances['termii'] = $this->buildErrorPayload(
-                'termii',
-                'Termii',
-                'Bulk SMS Gateway',
-                '₦',
-                'NGN',
-                'Exception: ' . $e->getMessage()
-            );
-        }
-
-        if (!empty($balances)) {
-            @file_put_contents($cacheFile, json_encode($balances, JSON_UNESCAPED_SLASHES));
+        foreach ($providers as $pKey) {
+            try {
+                $balances[$pKey] = $this->getBalanceForProvider($pKey, $forceRefresh);
+            } catch (\Throwable $e) {
+                $balances[$pKey] = $this->buildErrorPayload(
+                    $pKey,
+                    ucfirst($pKey),
+                    'Service',
+                    '₦',
+                    'NGN',
+                    'Exception: ' . $e->getMessage()
+                );
+            }
         }
 
         return $balances;
@@ -477,8 +455,8 @@ class ProviderBalanceService
             'balance' => 0.00,
             'currency' => $currency,
             'symbol' => $symbol,
-            'formatted' => 'Not Configured',
-            'environment' => 'Unconfigured',
+            'formatted' => 'Not configured',
+            'environment' => 'Not configured',
             'message' => 'API credentials are empty in .env',
             'timestamp' => date('Y-m-d H:i:s')
         ];
@@ -498,8 +476,8 @@ class ProviderBalanceService
             'balance' => 0.00,
             'currency' => $currency,
             'symbol' => $symbol,
-            'formatted' => 'Unavailable',
-            'environment' => 'Unknown',
+            'formatted' => 'Unable to fetch',
+            'environment' => 'Unable to fetch',
             'message' => $errorMsg,
             'timestamp' => date('Y-m-d H:i:s')
         ];
@@ -509,7 +487,7 @@ class ProviderBalanceService
      * Safe internal HTTP requester with strict timeouts
      * Never leaks Authorization headers or credentials to exception messages.
      */
-    private function executeHttpRequest(string $url, string $method = 'GET', array $headers = [], int $timeout = 8): array
+    private function executeHttpRequest(string $url, string $method = 'GET', array $headers = [], int $timeout = 5): array
     {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -517,7 +495,7 @@ class ProviderBalanceService
             CURLOPT_CUSTOMREQUEST => strtoupper($method),
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_CONNECTTIMEOUT => 3,
             CURLOPT_SSL_VERIFYPEER => true
         ]);
 
