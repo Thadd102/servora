@@ -2,7 +2,7 @@
 
 /*
 |--------------------------------------------------------------------------
-| SERVORA - VIRTUAL NUMBER PRICING
+| SUBNEXT - VIRTUAL NUMBER PRICING
 |--------------------------------------------------------------------------
 |
 | Central pricing logic for the Foreign Number module.

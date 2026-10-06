@@ -1,27 +1,34 @@
 <?php
 
+require_once __DIR__ . '/../config/env.php';
+
 /**
  * Secure session configuration
  *
- * LOCAL DEVELOPMENT:
- * secure = false
- *
- * PRODUCTION WITH HTTPS:
- * secure = true
+ * Automatically enforces:
+ * - strict session mode
+ * - httpOnly flag
+ * - secure cookies over HTTPS or in production
+ * - SameSite=Lax policy
  */
 
 if (session_status() === PHP_SESSION_NONE) {
 
-    // Prevent PHP from revealing unnecessary session information
+    // Prevent PHP from revealing uninitialized session IDs
     ini_set('session.use_strict_mode', '1');
 
-    // Use cookies only for session IDs
+    // Use cookies only for session IDs (disable URL-based session passing)
     ini_set('session.use_only_cookies', '1');
+
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+        || (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on')
+        || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
 
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => '/',
-        'secure' => ((getenv('APP_ENV') ?: 'development') === 'production') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'secure' => $isHttps,
         'httponly' => true,
         'samesite' => 'Lax'
     ]);

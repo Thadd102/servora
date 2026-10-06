@@ -144,7 +144,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Throwable $e) {
 
                     error_log(
-                        "Servora provider add error: " .
+                        "Subnext provider add error: " .
                         $e->getMessage()
                     );
 
@@ -251,7 +251,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Throwable $e) {
 
                     error_log(
-                        "Servora provider status error: " .
+                        "Subnext provider status error: " .
                         $e->getMessage()
                     );
 

@@ -825,6 +825,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </main>
 
+    <script src="assets/js/loader.js" defer></script>
 </body>
 
 </html>

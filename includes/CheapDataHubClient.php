@@ -28,7 +28,7 @@ class CheapDataHubClient
     |
     | Sometimes an API returns HTML instead of JSON during a server error.
     |
-    | We remove HTML and limit the stored message so Servora doesn't save
+    | We remove HTML and limit the stored message so Subnext doesn't save
     | an enormous error page in the database.
     |
     */

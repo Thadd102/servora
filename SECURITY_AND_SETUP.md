@@ -7,19 +7,19 @@ The uploaded project contained hard-coded payment and SMTP credentials. They wer
 Copy `.env.example` values into your hosting environment. Do **not** commit a real `.env` file.
 
 Required for Paystack:
-- `APP_URL` — public HTTPS base URL in production, e.g. `https://example.com/service-platform`
+- `APP_URL` — public HTTPS base URL in production: `https://subnext.com.ng`
 - `PAYSTACK_SECRET_KEY` — server-side secret key
 - `PAYSTACK_PUBLIC_KEY` — public key (kept for future inline checkout; redirect flow currently only needs the secret server-side)
 
 ## Paystack dashboard
 Set the webhook URL to:
-`https://YOUR-DOMAIN/service-platform/payment/paystack_webhook.php`
+`https://subnext.com.ng/payment/paystack_webhook.php`
 
 The browser callback is set automatically during initialization to:
-`/client/verify_payment.php`
+`https://subnext.com.ng/client/verify_payment.php`
 
 The Paystack checkout cancel button is set through `metadata.cancel_action` to:
-`/client/payment_cancelled.php`
+`https://subnext.com.ng/client/payment_cancelled.php?gateway=paystack&reference=...`
 
 A cancel redirect never credits a wallet. Successful wallet credit requires a server-side Paystack verification or a signed `charge.success` webhook.
 
@@ -50,7 +50,7 @@ Server environment values:
 - FLW_SECRET_KEY
 - FLW_PUBLIC_KEY
 - FLW_SECRET_HASH (for a Flutterwave webhook when configured)
-- APP_URL (example locally: http://localhost/service-platform)
+- APP_URL (e.g. https://subnext.com.ng)
 
 Flutterwave cancellation is handled before transaction verification because a cancelled redirect may not contain a transaction_id.
 

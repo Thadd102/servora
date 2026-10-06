@@ -81,3 +81,4 @@ $isProfile = in_array($currentPage, [
         </a>
     </div>
 </nav>
+<script src="../assets/js/loader.js" defer></script>

@@ -824,7 +824,7 @@ class DataOrderRefundService
 
 
             error_log(
-                "Servora data refund error for order " .
+                "Subnext data refund error for order " .
                 $orderId .
                 ": " .
                 $e->getMessage()

@@ -6,8 +6,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 require_once __DIR__ . "/vendor/autoload.php";
-
-session_start();
+require_once __DIR__ . "/includes/auth.php";
 
 $error = "";
 
@@ -108,18 +107,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $mail = new PHPMailer(true);
 
                     $mail->isSMTP();
-                    $mail->Host = getenv("SMTP_HOST") ?: "smtp.gmail.com";
+                    $mail->Host = getenv("SMTP_HOST") ?: ($_ENV["SMTP_HOST"] ?? "smtp.gmail.com");
                     $mail->SMTPAuth = true;
 
-                    // Keep your working Gmail details here
-                    $mail->Username = getenv("SMTP_USERNAME") ?: "";
-                    $mail->Password = getenv("SMTP_PASSWORD") ?: "";
+                    $mail->Username = getenv("SMTP_USERNAME") ?: ($_ENV["SMTP_USERNAME"] ?? "");
+                    $mail->Password = getenv("SMTP_PASSWORD") ?: ($_ENV["SMTP_PASSWORD"] ?? "");
 
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port = (int) (getenv("SMTP_PORT") ?: 587);
+                    $mail->Port = (int) (getenv("SMTP_PORT") ?: ($_ENV["SMTP_PORT"] ?? 587));
 
-                    $fromName = getenv("SMTP_FROM_NAME") ?: "Subnext";
-                    $fromEmail = getenv("SMTP_FROM_EMAIL") ?: ($mail->Username ?: "support@subnext.com.ng");
+                    $fromName = getenv("SMTP_FROM_NAME") ?: ($_ENV["SMTP_FROM_NAME"] ?? "Subnext");
+                    $fromEmail = getenv("SMTP_FROM_EMAIL") ?: ($_ENV["SMTP_FROM_EMAIL"] ?? ($mail->Username ?: "support@subnext.com.ng"));
 
                     $mail->setFrom($fromEmail, $fromName);
 
@@ -200,14 +198,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $pdo->rollBack();
                     }
 
+                    error_log("OTP mail delivery failed: " . $e->getMessage());
+
                     $error =
-                        "Unable to send OTP. Please try again.";
+                        "Unable to send verification OTP. Please try again or contact support@subnext.com.ng.";
 
                 } catch (Throwable $e) {
 
                     if ($pdo->inTransaction()) {
                         $pdo->rollBack();
                     }
+
+                    error_log("Password reset OTP error: " . $e->getMessage());
 
                     $error =
                         "Something went wrong. Please try again.";
@@ -370,6 +372,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </div>
 
+<script src="assets/js/loader.js" defer></script>
 </body>
 
 </html>

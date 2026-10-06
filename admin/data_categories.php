@@ -154,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Throwable $e) {
 
                     error_log(
-                        "Servora add data category error: " .
+                        "Subnext add data category error: " .
                         $e->getMessage()
                     );
 
@@ -262,7 +262,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Throwable $e) {
 
                     error_log(
-                        "Servora category status error: " .
+                        "Subnext category status error: " .
                         $e->getMessage()
                     );
 

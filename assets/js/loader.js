@@ -1,5 +1,5 @@
 /**
- * Subnext Modern Application Script & Loader System
+ * Subnext Modern Loader & Progress System
  * Seamless, accessible visual feedback for form submissions and user actions.
  */
 (function (window, document) {

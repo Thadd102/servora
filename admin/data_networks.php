@@ -164,7 +164,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Throwable $e) {
 
                     error_log(
-                        "Servora add network error: " .
+                        "Subnext add network error: " .
                         $e->getMessage()
                     );
 
@@ -272,7 +272,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Throwable $e) {
 
                     error_log(
-                        "Servora network status error: " .
+                        "Subnext network status error: " .
                         $e->getMessage()
                     );
 

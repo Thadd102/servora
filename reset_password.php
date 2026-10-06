@@ -2,7 +2,7 @@
 
 require_once "config/database.php";
 
-session_start();
+require_once __DIR__ . "/includes/auth.php";
 
 $error = "";
 $success = "";
@@ -331,6 +331,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </div>
 
+<script src="assets/js/loader.js" defer></script>
 </body>
 
 </html>
