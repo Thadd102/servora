@@ -21,33 +21,49 @@ class EmailService
 {
     /**
      * Build and configure a secure PHPMailer instance using .env credentials
+     * Configured for GO54 production email (mail.subnext.com.ng on port 587 with STARTTLS).
      */
     public static function createMailer(): PHPMailer
     {
         $mail = new PHPMailer(true);
 
-        $host = getenv('SMTP_HOST') ?: ($_ENV['SMTP_HOST'] ?? 'smtp.gmail.com');
-        $port = (int)(getenv('SMTP_PORT') ?: ($_ENV['SMTP_PORT'] ?? 587));
-        $username = getenv('SMTP_USERNAME') ?: ($_ENV['SMTP_USERNAME'] ?? '');
-        $password = getenv('SMTP_PASSWORD') ?: ($_ENV['SMTP_PASSWORD'] ?? '');
-        $fromEmail = getenv('SMTP_FROM_EMAIL') ?: ($_ENV['SMTP_FROM_EMAIL'] ?? ($username ?: 'support@subnext.com.ng'));
-        $fromName = getenv('SMTP_FROM_NAME') ?: ($_ENV['SMTP_FROM_NAME'] ?? 'Subnext');
+        // Credentials & server settings come strictly from .env
+        $host = getenv('SMTP_HOST') ?: ($_ENV['SMTP_HOST'] ?? ($_SERVER['SMTP_HOST'] ?? 'mail.subnext.com.ng'));
+        $port = (int)(getenv('SMTP_PORT') ?: ($_ENV['SMTP_PORT'] ?? ($_SERVER['SMTP_PORT'] ?? 587)));
+        $username = getenv('SMTP_USERNAME') ?: ($_ENV['SMTP_USERNAME'] ?? ($_SERVER['SMTP_USERNAME'] ?? ''));
+        $password = getenv('SMTP_PASSWORD') ?: ($_ENV['SMTP_PASSWORD'] ?? ($_SERVER['SMTP_PASSWORD'] ?? ''));
+        $fromEmail = getenv('SMTP_FROM_EMAIL') ?: ($_ENV['SMTP_FROM_EMAIL'] ?? ($_SERVER['SMTP_FROM_EMAIL'] ?? ($username ?: 'support@subnext.com.ng')));
+        $fromName = getenv('SMTP_FROM_NAME') ?: ($_ENV['SMTP_FROM_NAME'] ?? ($_SERVER['SMTP_FROM_NAME'] ?? 'Subnext'));
 
         $mail->isSMTP();
         $mail->Host = $host;
-        $mail->SMTPAuth = !empty($username) || !empty($password);
+        $mail->SMTPAuth = true;
         $mail->Username = $username;
         $mail->Password = $password;
 
+        // Port 587 uses STARTTLS with auto-TLS negotiation; Port 465 uses SMTPS
         if ($port === 465) {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         } else {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->SMTPAutoTLS = true;
         }
 
         $mail->Port = $port;
+        $mail->Timeout = 20;
         $mail->CharSet = 'UTF-8';
+
+        // Compatibility with cPanel/GO54 mail server certificate hostname variations
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+            ],
+        ];
+
         $mail->setFrom($fromEmail, $fromName);
+        $mail->addReplyTo($fromEmail, $fromName);
 
         return $mail;
     }
@@ -64,6 +80,8 @@ class EmailService
         if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
+
+        $mail = null;
 
         try {
             $mail = self::createMailer();
@@ -132,10 +150,10 @@ class EmailService
             $mail->send();
             return true;
         } catch (Exception $e) {
-            error_log('EmailService OTP sending failed: ' . $e->getMessage());
+            self::logSmtpError('OTP Email (PHPMailer)', $e, $mail, $recipientEmail);
             return false;
         } catch (Throwable $e) {
-            error_log('EmailService general error: ' . $e->getMessage());
+            self::logSmtpError('OTP Email (General)', $e, $mail, $recipientEmail);
             return false;
         }
     }
@@ -154,6 +172,8 @@ class EmailService
         if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
+
+        $mail = null;
 
         try {
             $mail = self::createMailer();
@@ -223,11 +243,72 @@ class EmailService
             $mail->send();
             return true;
         } catch (Exception $e) {
-            error_log('EmailService ticket notification failed: ' . $e->getMessage());
+            self::logSmtpError('Ticket Notification (PHPMailer)', $e, $mail, $recipientEmail);
             return false;
         } catch (Throwable $e) {
-            error_log('EmailService general error: ' . $e->getMessage());
+            self::logSmtpError('Ticket Notification (General)', $e, $mail, $recipientEmail);
             return false;
         }
+    }
+
+    /**
+     * Log detailed SMTP diagnostic information without exposing passwords or secrets.
+     */
+    private static function logSmtpError(
+        string $context,
+        Throwable $e,
+        ?PHPMailer $mail = null,
+        string $recipientEmail = ''
+    ): void {
+        $errorMessage = $e->getMessage();
+        if ($mail !== null && !empty($mail->ErrorInfo) && $mail->ErrorInfo !== $errorMessage) {
+            $errorMessage .= ' | PHPMailer: ' . $mail->ErrorInfo;
+        }
+
+        // Redact any configured SMTP password from error messages
+        $smtpPassword = (string)(getenv('SMTP_PASSWORD') ?: ($_ENV['SMTP_PASSWORD'] ?? ($_SERVER['SMTP_PASSWORD'] ?? '')));
+        if ($smtpPassword !== '') {
+            $errorMessage = str_replace($smtpPassword, '[REDACTED]', $errorMessage);
+        }
+
+        // Safe connection metadata
+        $host = $mail ? $mail->Host : (getenv('SMTP_HOST') ?: ($_ENV['SMTP_HOST'] ?? 'mail.subnext.com.ng'));
+        $port = $mail ? $mail->Port : (int)(getenv('SMTP_PORT') ?: ($_ENV['SMTP_PORT'] ?? 587));
+        $secureMode = $mail ? $mail->SMTPSecure : 'tls';
+        $rawUser = (string)(getenv('SMTP_USERNAME') ?: ($_ENV['SMTP_USERNAME'] ?? ($_SERVER['SMTP_USERNAME'] ?? '')));
+        $safeUser = self::maskEmail($rawUser);
+        $safeRecipient = self::maskEmail($recipientEmail);
+
+        error_log(sprintf(
+            'EmailService [%s] Failed: %s [Host: %s:%s | Security: %s | AuthUser: %s | Recipient: %s]',
+            $context,
+            $errorMessage,
+            $host,
+            $port,
+            $secureMode ?: 'none',
+            $safeUser ?: 'not set',
+            $safeRecipient ?: 'not set'
+        ));
+    }
+
+    /**
+     * Mask email address for safe log output (e.g., support@subnext.com.ng -> s***t@subnext.com.ng)
+     */
+    private static function maskEmail(string $email): string
+    {
+        $email = trim($email);
+        if ($email === '' || !str_contains($email, '@')) {
+            return $email !== '' ? substr($email, 0, 2) . '***' : '';
+        }
+
+        [$user, $domain] = explode('@', $email, 2);
+        $len = strlen($user);
+        if ($len <= 2) {
+            $maskedUser = $user[0] . '*';
+        } else {
+            $maskedUser = $user[0] . str_repeat('*', min(4, $len - 2)) . $user[$len - 1];
+        }
+
+        return $maskedUser . '@' . $domain;
     }
 }
