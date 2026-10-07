@@ -23,25 +23,42 @@ class EmailService
      * Build and configure a secure PHPMailer instance using .env credentials
      * Configured for GO54 production email (mail.subnext.com.ng on port 587 with STARTTLS).
      */
-    public static function createMailer(): PHPMailer
+    public static function createMailer(?array &$debugCapture = null): PHPMailer
     {
         $mail = new PHPMailer(true);
 
-        // Credentials & server settings come strictly from .env
-        $host = getenv('SMTP_HOST') ?: ($_ENV['SMTP_HOST'] ?? ($_SERVER['SMTP_HOST'] ?? 'mail.subnext.com.ng'));
-        $port = (int)(getenv('SMTP_PORT') ?: ($_ENV['SMTP_PORT'] ?? ($_SERVER['SMTP_PORT'] ?? 587)));
-        $username = getenv('SMTP_USERNAME') ?: ($_ENV['SMTP_USERNAME'] ?? ($_SERVER['SMTP_USERNAME'] ?? ''));
-        $password = getenv('SMTP_PASSWORD') ?: ($_ENV['SMTP_PASSWORD'] ?? ($_SERVER['SMTP_PASSWORD'] ?? ''));
-        $fromEmail = getenv('SMTP_FROM_EMAIL') ?: ($_ENV['SMTP_FROM_EMAIL'] ?? ($_SERVER['SMTP_FROM_EMAIL'] ?? ($username ?: 'support@subnext.com.ng')));
-        $fromName = getenv('SMTP_FROM_NAME') ?: ($_ENV['SMTP_FROM_NAME'] ?? ($_SERVER['SMTP_FROM_NAME'] ?? 'Subnext'));
+        // Retrieve credentials and settings via subnextEnv (supports memory cache, getenv, $_ENV, $_SERVER)
+        $host = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_HOST', 'mail.subnext.com.ng') : (getenv('SMTP_HOST') ?: 'mail.subnext.com.ng')));
+        if ($host === '') {
+            $host = 'mail.subnext.com.ng';
+        }
 
+        $port = (int)(function_exists('subnextEnv') ? subnextEnv('SMTP_PORT', '587') : (getenv('SMTP_PORT') ?: 587));
+        if ($port <= 0) {
+            $port = 587;
+        }
+
+        $username = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_USERNAME', '') : (getenv('SMTP_USERNAME') ?: '')));
+        $password = (string)(function_exists('subnextEnv') ? subnextEnv('SMTP_PASSWORD', '') : (getenv('SMTP_PASSWORD') ?: ''));
+
+        $fromEmail = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_FROM_EMAIL', '') : (getenv('SMTP_FROM_EMAIL') ?: '')));
+        if ($fromEmail === '') {
+            $fromEmail = $username !== '' ? $username : 'support@subnext.com.ng';
+        }
+
+        $fromName = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_FROM_NAME', 'Subnext') : (getenv('SMTP_FROM_NAME') ?: 'Subnext')));
+        if ($fromName === '') {
+            $fromName = 'Subnext';
+        }
+
+        // Configure authenticated SMTP
         $mail->isSMTP();
         $mail->Host = $host;
         $mail->SMTPAuth = true;
         $mail->Username = $username;
         $mail->Password = $password;
 
-        // Port 587 uses STARTTLS with auto-TLS negotiation; Port 465 uses SMTPS
+        // Port 587 uses STARTTLS; Port 465 uses SMTPS
         if ($port === 465) {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         } else {
@@ -62,8 +79,55 @@ class EmailService
             ],
         ];
 
+        // Authenticate credentials loaded before setting sender
         $mail->setFrom($fromEmail, $fromName);
         $mail->addReplyTo($fromEmail, $fromName);
+
+        // Safe temporary diagnostic logging (Zero secrets or passwords logged)
+        $envSource = function_exists('getEnvFilePath') ? (getEnvFilePath() ?: 'None/Not found') : 'Unknown';
+        $encMode = ($port === 465) ? 'SMTPS (ssl)' : 'STARTTLS (tls)';
+        $passwordLoaded = ($password !== '');
+        $passwordLength = strlen($password);
+
+        error_log(sprintf(
+            '[SMTP DIAGNOSTIC] Host: %s | Port: %d | Username: %s | Encryption: %s | SMTPAuth: %s | Password Loaded: %s | Password Length: %d | Env Source: %s',
+            $host,
+            $port,
+            $username !== '' ? $username : '(empty)',
+            $encMode,
+            $mail->SMTPAuth ? 'true' : 'false',
+            $passwordLoaded ? 'yes' : 'no',
+            $passwordLength,
+            $envSource
+        ));
+
+        // Warn if credentials are empty so it is immediately obvious why authentication fails
+        if ($username === '' || !$passwordLoaded) {
+            error_log(sprintf(
+                '[SMTP WARNING] Incomplete SMTP credentials loaded from .env! Username is %s, Password is %s. Authenticated mail will be rejected.',
+                $username !== '' ? "'{$username}'" : 'EMPTY',
+                $passwordLoaded ? 'PRESENT' : 'EMPTY'
+            ));
+        }
+
+        // Capture sanitized SMTP communication for error diagnostics if requested
+        if ($debugCapture !== null) {
+            $debugCapture = [];
+            $mail->SMTPDebug = 2; // Client and server responses
+            $mail->Debugoutput = function ($str, $level) use (&$debugCapture, $password) {
+                $line = trim($str);
+                if ($line === '') {
+                    return;
+                }
+                if ($password !== '') {
+                    $line = str_replace($password, '[REDACTED]', $line);
+                }
+                $debugCapture[] = $line;
+                if (count($debugCapture) > 20) {
+                    array_shift($debugCapture);
+                }
+            };
+        }
 
         return $mail;
     }
@@ -82,9 +146,10 @@ class EmailService
         }
 
         $mail = null;
+        $debugEntries = [];
 
         try {
-            $mail = self::createMailer();
+            $mail = self::createMailer($debugEntries);
             $mail->addAddress($recipientEmail, $recipientName);
             $mail->isHTML(true);
             $mail->Subject = "Your Subnext Verification Code: {$otp}";
@@ -150,10 +215,10 @@ class EmailService
             $mail->send();
             return true;
         } catch (Exception $e) {
-            self::logSmtpError('OTP Email (PHPMailer)', $e, $mail, $recipientEmail);
+            self::logSmtpError('OTP Email (PHPMailer)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         } catch (Throwable $e) {
-            self::logSmtpError('OTP Email (General)', $e, $mail, $recipientEmail);
+            self::logSmtpError('OTP Email (General)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         }
     }
@@ -174,9 +239,10 @@ class EmailService
         }
 
         $mail = null;
+        $debugEntries = [];
 
         try {
-            $mail = self::createMailer();
+            $mail = self::createMailer($debugEntries);
             $mail->addAddress($recipientEmail, $recipientName);
             $mail->isHTML(true);
             $mail->Subject = "[Subnext Support] New reply on ticket {$ticketCode}: {$ticketSubject}";
@@ -186,7 +252,7 @@ class EmailService
             $safeSubject = htmlspecialchars($ticketSubject, ENT_QUOTES, 'UTF-8');
             $safeExcerpt = nl2br(htmlspecialchars($replyExcerpt, ENT_QUOTES, 'UTF-8'));
             $safeStatus = htmlspecialchars($newStatus, ENT_QUOTES, 'UTF-8');
-            $appUrl = rtrim(getenv('APP_URL') ?: ($_ENV['APP_URL'] ?? 'https://subnext.com.ng'), '/');
+            $appUrl = rtrim(function_exists('subnextEnv') ? (subnextEnv('APP_URL', 'https://subnext.com.ng') ?: 'https://subnext.com.ng') : (getenv('APP_URL') ?: 'https://subnext.com.ng'), '/');
             $ticketUrl = $appUrl . '/client/support.php';
             $year = date('Y');
 
@@ -243,10 +309,10 @@ class EmailService
             $mail->send();
             return true;
         } catch (Exception $e) {
-            self::logSmtpError('Ticket Notification (PHPMailer)', $e, $mail, $recipientEmail);
+            self::logSmtpError('Ticket Notification (PHPMailer)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         } catch (Throwable $e) {
-            self::logSmtpError('Ticket Notification (General)', $e, $mail, $recipientEmail);
+            self::logSmtpError('Ticket Notification (General)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         }
     }
@@ -258,7 +324,8 @@ class EmailService
         string $context,
         Throwable $e,
         ?PHPMailer $mail = null,
-        string $recipientEmail = ''
+        string $recipientEmail = '',
+        array $debugEntries = []
     ): void {
         $errorMessage = $e->getMessage();
         if ($mail !== null && !empty($mail->ErrorInfo) && $mail->ErrorInfo !== $errorMessage) {
@@ -266,16 +333,16 @@ class EmailService
         }
 
         // Redact any configured SMTP password from error messages
-        $smtpPassword = (string)(getenv('SMTP_PASSWORD') ?: ($_ENV['SMTP_PASSWORD'] ?? ($_SERVER['SMTP_PASSWORD'] ?? '')));
+        $smtpPassword = (string)(function_exists('subnextEnv') ? subnextEnv('SMTP_PASSWORD', '') : (getenv('SMTP_PASSWORD') ?: ''));
         if ($smtpPassword !== '') {
             $errorMessage = str_replace($smtpPassword, '[REDACTED]', $errorMessage);
         }
 
         // Safe connection metadata
-        $host = $mail ? $mail->Host : (getenv('SMTP_HOST') ?: ($_ENV['SMTP_HOST'] ?? 'mail.subnext.com.ng'));
-        $port = $mail ? $mail->Port : (int)(getenv('SMTP_PORT') ?: ($_ENV['SMTP_PORT'] ?? 587));
+        $host = $mail ? $mail->Host : (function_exists('subnextEnv') ? subnextEnv('SMTP_HOST', 'mail.subnext.com.ng') : (getenv('SMTP_HOST') ?: 'mail.subnext.com.ng'));
+        $port = $mail ? $mail->Port : (int)(function_exists('subnextEnv') ? subnextEnv('SMTP_PORT', '587') : (getenv('SMTP_PORT') ?: 587));
         $secureMode = $mail ? $mail->SMTPSecure : 'tls';
-        $rawUser = (string)(getenv('SMTP_USERNAME') ?: ($_ENV['SMTP_USERNAME'] ?? ($_SERVER['SMTP_USERNAME'] ?? '')));
+        $rawUser = (string)(function_exists('subnextEnv') ? subnextEnv('SMTP_USERNAME', '') : (getenv('SMTP_USERNAME') ?: ''));
         $safeUser = self::maskEmail($rawUser);
         $safeRecipient = self::maskEmail($recipientEmail);
 
@@ -289,6 +356,12 @@ class EmailService
             $safeUser ?: 'not set',
             $safeRecipient ?: 'not set'
         ));
+
+        // If we have sanitized debug conversation entries, log them to pinpoint protocol errors
+        if (!empty($debugEntries)) {
+            $sanitizedSummary = implode(' | ', array_slice($debugEntries, -6));
+            error_log("EmailService [{$context}] SMTP Conversation Summary: " . $sanitizedSummary);
+        }
     }
 
     /**

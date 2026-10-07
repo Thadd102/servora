@@ -10,18 +10,28 @@
  * - Configures production error handling and secure logging
  */
 
-$envCandidatePaths = [
+if (!isset($GLOBALS['SUBNEXT_ENV_DATA'])) {
+    $GLOBALS['SUBNEXT_ENV_DATA'] = [];
+}
+
+$envCandidatePaths = array_unique(array_filter([
+    __DIR__ . '/../.env',
     dirname(__DIR__) . '/.env',
-    dirname(__DIR__, 2) . '/.env'
-];
+    dirname(__DIR__, 2) . '/.env',
+    !empty($_SERVER['DOCUMENT_ROOT']) ? rtrim($_SERVER['DOCUMENT_ROOT'], '/\\') . '/.env' : null,
+    !empty($_SERVER['DOCUMENT_ROOT']) ? dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/\\')) . '/.env' : null,
+    getcwd() ? rtrim(getcwd(), '/\\') . '/.env' : null,
+]));
 
 $envFile = null;
 foreach ($envCandidatePaths as $candidatePath) {
     if (file_exists($candidatePath) && is_readable($candidatePath)) {
-        $envFile = $candidatePath;
+        $envFile = realpath($candidatePath) ?: $candidatePath;
         break;
     }
 }
+
+$GLOBALS['SUBNEXT_ENV_FILE'] = $envFile;
 
 if ($envFile !== null) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -56,10 +66,46 @@ if ($envFile !== null) {
             continue;
         }
 
-        // Set in getenv, $_ENV, and $_SERVER
-        putenv($name . '=' . $value);
+        // Set in memory store, getenv, $_ENV, and $_SERVER
+        $GLOBALS['SUBNEXT_ENV_DATA'][$name] = $value;
+        @putenv($name . '=' . $value);
         $_ENV[$name] = $value;
         $_SERVER[$name] = $value;
+    }
+} else {
+    error_log('[ENV LOADER] Notice: No readable .env file found in candidate paths: ' . implode(' | ', $envCandidatePaths));
+}
+
+/**
+ * Robust environment variable accessor that bypasses disabled putenv() or missing $_ENV orders
+ */
+if (!function_exists('subnextEnv')) {
+    function subnextEnv(string $key, ?string $default = null): ?string
+    {
+        if (isset($GLOBALS['SUBNEXT_ENV_DATA'][$key]) && $GLOBALS['SUBNEXT_ENV_DATA'][$key] !== '') {
+            return (string)$GLOBALS['SUBNEXT_ENV_DATA'][$key];
+        }
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+            return (string)$_SERVER[$key];
+        }
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return (string)$_ENV[$key];
+        }
+        $val = getenv($key);
+        if ($val !== false && $val !== '') {
+            return (string)$val;
+        }
+        return $default;
+    }
+}
+
+/**
+ * Returns the exact absolute path of the loaded .env file, or null if not found
+ */
+if (!function_exists('getEnvFilePath')) {
+    function getEnvFilePath(): ?string
+    {
+        return $GLOBALS['SUBNEXT_ENV_FILE'] ?? null;
     }
 }
 
