@@ -151,6 +151,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <a href="utility_orders.php" class="px-3 py-2 rounded-lg bg-servora-50 text-servora-700">Utility Orders</a>
                 <a href="data_orders.php" class="px-3 py-2 rounded-lg hover:bg-slate-100">Data Orders</a>
                 <a href="foreign_number_orders.php" class="px-3 py-2 rounded-lg hover:bg-slate-100">Foreign Numbers</a>
+                <a href="support_tickets.php" class="px-3 py-2 rounded-lg hover:bg-slate-100">Support</a>
                 <a href="clients.php" class="px-3 py-2 rounded-lg hover:bg-slate-100">Clients</a>
             </nav>
         </div>

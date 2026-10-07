@@ -14,7 +14,8 @@ $isHome = in_array($currentPage, [
 
 $isOrders = in_array($currentPage, [
     'orders.php', 'data_order.php', 'foreign_number_history.php', 
-    'request.php', 'request_tracker.php', 'my_request.php', 'view_request.php'
+    'request.php', 'request_tracker.php', 'my_request.php', 'view_request.php',
+    'support.php', 'support_new.php', 'support_view.php'
 ], true);
 
 $isWallet = in_array($currentPage, [

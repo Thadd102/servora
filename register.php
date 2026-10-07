@@ -39,6 +39,159 @@ if (isLoggedIn()) {
 }
 
 /* =========================
+   ANTI-BOT MATH CAPTCHA
+========================= */
+
+function generateRegistrationCaptcha(): array
+{
+    $operations = ['+', '-', '×'];
+    $op = $operations[random_int(0, 2)];
+
+    if ($op === '+') {
+        $n1 = random_int(2, 14);
+        $n2 = random_int(1, 9);
+        $ans = $n1 + $n2;
+    } elseif ($op === '-') {
+        $n1 = random_int(5, 18);
+        $n2 = random_int(1, $n1 - 1);
+        $ans = $n1 - $n2;
+    } else { // multiplication
+        $n1 = random_int(2, 6);
+        $n2 = random_int(2, 5);
+        $ans = $n1 * $n2;
+    }
+
+    return [
+        'question' => "Solve this: {$n1} {$op} {$n2} = ?",
+        'answer' => $ans,
+        'created_at' => time()
+    ];
+}
+
+/**
+ * Validates that a phone number is a genuine, active telephone number.
+ * - Supports genuine 11-digit Nigerian mobile numbers (MTN, Airtel, Glo, 9mobile).
+ * - Normalizes +234 / 234 / local 0 formats.
+ * - Rejects dummy/fake numbers (e.g. 0990, 08012345678, repeating digits, invalid prefixes).
+ * - Also supports valid international numbers (E.164 standard: + followed by 8-15 digits).
+ */
+function validateRealPhoneNumber(string $phone): array {
+    $raw = trim($phone);
+    if ($raw === '') {
+        return [
+            'valid' => false,
+            'phone' => '',
+            'error' => 'Phone number is required.'
+        ];
+    }
+
+    // Strip formatting spaces, hyphens, brackets, and dots
+    $clean = preg_replace('/[\s\-\(\)\.]/', '', $raw);
+
+    // Normalize Nigerian phone numbers with country code (+234 or 234)
+    if (str_starts_with($clean, '+234')) {
+        $clean = '0' . substr($clean, 4);
+    } elseif (str_starts_with($clean, '234') && strlen($clean) === 13) {
+        $clean = '0' . substr($clean, 3);
+    }
+
+    // 1. Check for standard Nigerian Mobile Number (11 digits)
+    if (preg_match('/^0\d{10}$/', $clean)) {
+        // Officially assigned Nigerian telecom mobile prefixes
+        $validPrefixes = [
+            // MTN Nigeria
+            '0703', '0704', '0706', '0707', '0803', '0806', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916', '0702',
+            // Airtel Nigeria
+            '0701', '0708', '0802', '0808', '0812', '0901', '0902', '0904', '0907', '0911', '0912',
+            // Globacom (Glo)
+            '0705', '0805', '0807', '0811', '0815', '0905', '0915',
+            // 9mobile
+            '0809', '0817', '0818', '0908', '0909',
+            // Other licensed national operators
+            '0804', '0819'
+        ];
+
+        $prefix = substr($clean, 0, 4);
+        if (!in_array($prefix, $validPrefixes, true)) {
+            return [
+                'valid' => false,
+                'phone' => '',
+                'error' => 'Please enter a valid phone number. The prefix (' . htmlspecialchars($prefix) . ') is not recognized.'
+            ];
+        }
+
+        // Reject obvious dummy/placeholder sequences
+        $dummyNumbers = [
+            '08012345678', '08087654321', '08000000000', '07000000000',
+            '09000000000', '08100000000', '09100000000', '08099999999'
+        ];
+        if (in_array($clean, $dummyNumbers, true)) {
+            return [
+                'valid' => false,
+                'phone' => '',
+                'error' => 'Please enter a real, active phone number.'
+            ];
+        }
+
+        // Reject repeating suffix digits (e.g. 08030000000, 08031111111, 09039999999)
+        $suffix = substr($clean, 4);
+        if (preg_match('/^(.)\1{6,}$/', $suffix)) {
+            return [
+                'valid' => false,
+                'phone' => '',
+                'error' => 'Please enter a real, active phone number.'
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'phone' => $clean,
+            'error' => ''
+        ];
+    }
+
+    // 2. Check for valid International Phone Number (E.164: + followed by 8 to 15 digits)
+    if (preg_match('/^\+[1-9]\d{8,14}$/', $clean)) {
+        // Reject repeating dummy digits like +111111111111
+        if (preg_match('/^\+[1-9](.)\1{7,}$/', $clean)) {
+            return [
+                'valid' => false,
+                'phone' => '',
+                'error' => 'Please enter a real international phone number.'
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'phone' => $clean,
+            'error' => ''
+        ];
+    }
+
+    // Invalid length or format
+    return [
+        'valid' => false,
+        'phone' => '',
+        'error' => 'Please enter a valid 11-digit phone number (e.g. 08031234567) or international number with country code.'
+    ];
+}
+
+// Interactive AJAX refresh request
+if (isset($_GET['refresh_captcha'])) {
+    $c = generateRegistrationCaptcha();
+    $_SESSION['reg_captcha_answer'] = $c['answer'];
+    $_SESSION['reg_captcha_question'] = $c['question'];
+    $_SESSION['reg_captcha_time'] = $c['created_at'];
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'success',
+        'question' => $c['question']
+    ]);
+    exit;
+}
+
+/* =========================
    CSRF TOKEN
 ========================= */
 
@@ -82,15 +235,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirmPassword = $_POST['confirm_password'] ?? '';
 
         /* =========================
-           DISCLAIMER CHECK
+           CAPTCHA VERIFICATION
+        ========================= */
+        $captchaInput = trim($_POST['captcha_answer'] ?? '');
+        $storedCaptcha = $_SESSION['reg_captcha_answer'] ?? null;
+        $captchaTime = (int)($_SESSION['reg_captcha_time'] ?? 0);
+
+        // Invalidate and rotate the question immediately to prevent reuse
+        $freshCaptcha = generateRegistrationCaptcha();
+        $_SESSION['reg_captcha_answer'] = $freshCaptcha['answer'];
+        $_SESSION['reg_captcha_question'] = $freshCaptcha['question'];
+        $_SESSION['reg_captcha_time'] = $freshCaptcha['created_at'];
+
+        /* =========================
+           DISCLAIMER / TERMS CHECK
         ========================= */
 
         $acceptedDisclaimer = isset($_POST['disclaimer'])
             && $_POST['disclaimer'] === '1';
 
-        if (!$acceptedDisclaimer) {
+        /* =========================
+           PHONE VALIDATION
+        ========================= */
+        $phoneValidation = validateRealPhoneNumber($phone);
 
-            $error = "You must read and accept the disclaimer before creating an account.";
+        if ($captchaInput === '' || !is_numeric($captchaInput) || $storedCaptcha === null || (int)$captchaInput !== (int)$storedCaptcha) {
+
+            $error = "Incorrect answer to security question. Please solve the new question.";
+
+        } elseif ($captchaTime > 0 && (time() - $captchaTime) > 900) {
+
+            $error = "Security question expired. Please solve the new question.";
+
+        } elseif (!$acceptedDisclaimer) {
+
+            $error = "You must agree to the Terms & Conditions before creating an account.";
 
         } elseif ($fullName === '') {
 
@@ -103,6 +282,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
             $error = "Please enter a valid email address.";
+
+        } elseif (!$phoneValidation['valid']) {
+
+            $error = $phoneValidation['error'];
 
         } elseif ($password === '') {
 
@@ -117,6 +300,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Passwords do not match.";
 
         } else {
+
+            // Use the sanitized and normalized phone number
+            $phone = $phoneValidation['phone'];
 
             try {
 
@@ -217,6 +403,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Ensure active CAPTCHA question for display
+if (
+    empty($_SESSION['reg_captcha_question']) ||
+    !isset($_SESSION['reg_captcha_answer']) ||
+    (time() - (int)($_SESSION['reg_captcha_time'] ?? 0) > 900)
+) {
+    $initCaptcha = generateRegistrationCaptcha();
+    $_SESSION['reg_captcha_answer'] = $initCaptcha['answer'];
+    $_SESSION['reg_captcha_question'] = $initCaptcha['question'];
+    $_SESSION['reg_captcha_time'] = $initCaptcha['created_at'];
+}
+$captchaQuestion = $_SESSION['reg_captcha_question'];
 
 ?>
 
@@ -508,9 +707,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             id="phone"
                             name="phone"
                             value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>"
-                            placeholder="08012345678"
+                            placeholder="e.g. 08031234567 or +234..."
                             autocomplete="tel"
                             required
+                            maxlength="17"
                             class="w-full
                             h-14
                             rounded-xl
@@ -526,6 +726,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             focus:ring-4
                             focus:ring-[#5146C7]/10"
                         >
+
+                        <p class="mt-1.5 text-xs text-gray-500">
+                            Enter an active 11-digit Nigerian mobile number (e.g. 0803 123 4567) or international number.
+                        </p>
 
                     </div>
 
@@ -610,152 +814,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
 
-                    <!-- DISCLAIMER -->
-                    <div
-                        class="rounded-2xl
-                        border border-[#DDD9FF]
-                        bg-gradient-to-br
-                        from-[#F8F7FF]
-                        to-[#F3F1FF]
-                        p-4
-                        sm:p-5"
-                    >
-
-                        <div class="flex items-start gap-3">
-
-                            <div
-                                class="flex-shrink-0
-                                w-9 h-9
-                                rounded-xl
-                                bg-[#3E37B7]
-                                text-white
-                                flex items-center justify-center"
+                    <!-- ANTI-BOT MATH CAPTCHA -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label
+                                for="captcha_answer"
+                                class="block text-sm font-semibold text-gray-700"
                             >
-
-                                <svg
-                                    class="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M12 22a10 10 0 100-20 10 10 0 000 20z"
-                                    />
-
+                                Security Question <span class="text-rose-500">*</span>
+                            </label>
+                            <button
+                                type="button"
+                                id="refreshCaptchaBtn"
+                                class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5146C7] hover:text-[#3E37B7] transition cursor-pointer select-none"
+                                title="Generate a different question"
+                            >
+                                <svg id="refreshCaptchaIcon" class="w-3.5 h-3.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-
-                            </div>
-
-                            <div>
-
-                                <h3
-                                    class="font-bold
-                                    text-[#3E37B7]"
-                                >
-                                    Important Notice
-                                </h3>
-
-                                <p
-                                    class="mt-2
-                                    text-xs
-                                    sm:text-sm
-                                    leading-relaxed
-                                    text-gray-600"
-                                >
-                                    Subnext provides a platform for submitting
-                                    service requests and receiving processed
-                                    results. You are responsible for providing
-                                    accurate information and documents.
-                                </p>
-
-                            </div>
-
+                                <span>Change question</span>
+                            </button>
                         </div>
 
-
-                        <div
-                            class="mt-4
-                            pt-4
-                            border-t
-                            border-[#DDD9FF]"
-                        >
-
-                            <p
-                                class="text-xs
-                                sm:text-sm
-                                leading-relaxed
-                                text-gray-600"
-                            >
-                                Subnext will process your information only for
-                                the purpose of handling your requested service.
-                                You should not submit information that you are
-                                not authorized to provide.
-                            </p>
-
-                            <p
-                                class="mt-3
-                                text-xs
-                                sm:text-sm
-                                leading-relaxed
-                                text-gray-600"
-                            >
-                                Service processing times may vary depending on
-                                the nature of the request and the relevant
-                                processing requirements.
-                            </p>
-
-                            <p
-                                class="mt-3
-                                text-xs
-                                sm:text-sm
-                                leading-relaxed
-                                text-gray-600"
-                            >
-                                By creating an account, you acknowledge that
-                                you have read and understood this notice.
-                            </p>
-
+                        <div class="rounded-xl border border-indigo-100 bg-indigo-50/70 p-3 mb-2 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#3E37B7] text-xs font-black text-white shadow-xs">?</span>
+                                <span id="captchaQuestionText" class="font-bold text-slate-800 text-sm tracking-wide">
+                                    <?= htmlspecialchars($captchaQuestion, ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-white/90 px-2 py-0.5 rounded-md border border-indigo-100/80">Anti-Bot</span>
                         </div>
 
-
-                        <!-- CHECKBOX -->
-                        <label
-                            class="mt-5
-                            flex items-start gap-3
-                            cursor-pointer
-                            select-none"
+                        <input
+                            type="number"
+                            id="captcha_answer"
+                            name="captcha_answer"
+                            placeholder="Enter your math answer (e.g. 5)"
+                            required
+                            autocomplete="off"
+                            class="w-full
+                            h-14
+                            rounded-xl
+                            border border-gray-200
+                            bg-gray-50
+                            px-4
+                            text-gray-900
+                            placeholder-gray-400
+                            outline-none
+                            transition
+                            focus:bg-white
+                            focus:border-[#5146C7]
+                            focus:ring-4
+                            focus:ring-[#5146C7]/10"
                         >
+                    </div>
 
+
+                    <!-- SIMPLIFIED TERMS & CONDITIONS -->
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 sm:p-4">
+                        <label class="flex items-start gap-3 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 name="disclaimer"
                                 value="1"
                                 <?= isset($_POST['disclaimer']) ? 'checked' : '' ?>
-                                class="mt-1
-                                w-5 h-5
-                                flex-shrink-0
-                                accent-[#3E37B7]
-                                cursor-pointer"
+                                required
+                                class="mt-0.5 w-4 h-4 flex-shrink-0 accent-[#3E37B7] rounded cursor-pointer"
                             >
-
-                            <span
-                                class="text-xs
-                                sm:text-sm
-                                leading-relaxed
-                                font-medium
-                                text-gray-700"
-                            >
-                                I have read and understood the disclaimer
-                                and agree to provide accurate information
-                                when using Subnext.
+                            <span class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                I agree to the <span class="font-semibold text-slate-800">Terms of Service</span> and acknowledge that my details will only be used securely for processing requested services.
                             </span>
-
                         </label>
-
                     </div>
 
 
@@ -826,6 +956,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script src="assets/js/loader.js" defer></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const refreshBtn = document.getElementById('refreshCaptchaBtn');
+        const refreshIcon = document.getElementById('refreshCaptchaIcon');
+        const questionText = document.getElementById('captchaQuestionText');
+        const answerInput = document.getElementById('captcha_answer');
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function () {
+                if (refreshIcon) refreshIcon.classList.add('animate-spin');
+                refreshBtn.disabled = true;
+
+                fetch('register.php?refresh_captcha=1')
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data && data.question && questionText) {
+                            questionText.textContent = data.question;
+                            if (answerInput) {
+                                answerInput.value = '';
+                                answerInput.focus();
+                            }
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('Failed to refresh security question', err);
+                    })
+                    .finally(function () {
+                        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+                        refreshBtn.disabled = false;
+                    });
+            });
+        }
+
+        // Real-time phone sanitizer: allow digits, plus, spaces, and hyphens only
+        const phoneInput = document.getElementById('phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function () {
+                const cleaned = this.value.replace(/[^\d+\s\-]/g, '');
+                if (cleaned !== this.value) {
+                    this.value = cleaned;
+                }
+            });
+        }
+    });
+    </script>
 </body>
 
 </html>

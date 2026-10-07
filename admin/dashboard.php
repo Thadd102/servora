@@ -2350,6 +2350,96 @@ $providerBalances = $balanceService->getCachedOrPlaceholderBalances();
 
             </a>
 
+            <!-- SUPPORT TICKETS -->
+
+            <a
+                href="support_tickets.php"
+                class="group rounded-2xl border
+                border-slate-200 bg-white
+                p-5 shadow-sm transition
+                hover:-translate-y-0.5
+                hover:border-amber-200
+                hover:shadow-md"
+            >
+
+                <div
+                    class="flex items-start
+                    justify-between"
+                >
+
+                    <div
+                        class="flex h-11 w-11
+                        items-center justify-center
+                        rounded-xl bg-amber-50
+                        text-amber-700"
+                    >
+                        <svg
+                            class="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="1.8"
+                                d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.876-.876c.15-.71.39-1.393.708-2.023C3.805 16.592 3 14.414 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+                            />
+                        </svg>
+                    </div>
+
+                    <span
+                        class="text-slate-300
+                        transition
+                        group-hover:text-amber-600"
+                    >
+                        →
+                    </span>
+
+                </div>
+
+                <div
+                    class="mt-5 flex
+                    items-center gap-2"
+                >
+                    <h3
+                        class="font-bold
+                        text-slate-900"
+                    >
+                        Support Tickets
+                    </h3>
+
+                    <?php
+                    $openTicketCount = 0;
+                    try {
+                        $stCountStmt = $pdo->query("SELECT COUNT(*) FROM support_tickets WHERE status = 'open'");
+                        if ($stCountStmt) {
+                            $openTicketCount = (int)$stCountStmt->fetchColumn();
+                        }
+                    } catch (Throwable $e) {}
+                    if ($openTicketCount > 0): ?>
+                        <span
+                            class="rounded-full
+                            bg-amber-100 px-2 py-0.5
+                            text-[10px] font-black
+                            text-amber-800 animate-pulse"
+                        >
+                            <?= $openTicketCount ?> Open
+                        </span>
+                    <?php endif; ?>
+                </div>
+
+                <p
+                    class="mt-1 text-sm
+                    leading-6 text-slate-500"
+                >
+                    Manage client inquiries, view
+                    replies, update ticket statuses
+                    and resolve issues.
+                </p>
+
+            </a>
+
         </div>
 
     </section>

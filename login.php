@@ -544,7 +544,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                         <p class="text-sm text-gray-500">
 
-                            Don't have an accccc?
+                            Don't have an account?
 
                             <a href="register.php" class="font-semibold
                                 text-[#3E37B7]

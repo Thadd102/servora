@@ -114,145 +114,121 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
 
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Security Code | Subnext</title>
+    <meta name="description" content="Enter your Subnext verification OTP to proceed.">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Verify OTP | Subnext</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            padding: 20px;
-        }
-
-        .card {
-            width: 100%;
-            max-width: 420px;
-            background: white;
-            padding: 30px;
-            border-radius: 14px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.08);
-            text-align: center;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #3E37B7;
-        }
-
-        p {
-            color: #666;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px;
-            text-align: center;
-            font-size: 22px;
-            letter-spacing: 6px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-
-        button {
-            width: 100%;
-            margin-top: 18px;
-            padding: 13px;
-            border: 0;
-            border-radius: 8px;
-            background: #3E37B7;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .error {
-            background: #ffe9e9;
-            color: #b00020;
-            padding: 10px;
-            border-radius: 7px;
-            margin-bottom: 15px;
-        }
-
-        a {
-            display: block;
-            margin-top: 18px;
-            color: #3E37B7;
-            text-decoration: none;
-        }
-
-    </style>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="assets/css/style.css">
 
 </head>
 
-<body>
+<body class="min-h-screen bg-[#F6F7FB] flex items-center justify-center p-4 sm:p-6 text-slate-900 antialiased">
 
-<div class="card">
+    <div class="w-full max-w-md">
 
-    <div class="logo">Subnext</div>
-    <p style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; margin-bottom: 14px;">Digital Services, Simplified.</p>
+        <!-- CARD -->
+        <div
+            class="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 text-center">
 
-    <p>
-        Enter the 6-digit verification code sent to your email.
-    </p>
+            <!-- LOGO & HEADER -->
+            <div class="mb-6">
 
-    <?php if ($error): ?>
+                <div
+                    class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#3E37B7] text-white shadow-lg shadow-indigo-200 mb-3">
+                    <span class="text-2xl font-black">S</span>
+                </div>
 
-        <div class="error">
-            <?= htmlspecialchars($error) ?>
+                <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    Verify Code
+                </h1>
+
+                <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                    Enter the 6-digit verification code sent to your registered email address.
+                </p>
+
+            </div>
+
+            <?php if ($error): ?>
+                <div
+                    class="mb-5 rounded-2xl border border-rose-200 bg-rose-50/90 p-3.5 text-xs font-semibold text-rose-800 flex items-start gap-2.5 text-left">
+                    <span class="text-base shrink-0 leading-none">⚠️</span>
+                    <span class="leading-relaxed"><?= htmlspecialchars($error) ?></span>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" class="space-y-4">
+
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION["csrf_token"]) ?>">
+
+                <div>
+                    <label for="otp" class="sr-only">
+                        6-Digit OTP
+                    </label>
+
+                    <input type="text" name="otp" id="otp" maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+                        placeholder="000000" autocomplete="one-time-code" required autofocus class="w-full
+                        h-16
+                        rounded-2xl
+                        border border-slate-200
+                        bg-slate-50
+                        px-4
+                        text-center
+                        font-mono
+                        text-3xl
+                        font-extrabold
+                        tracking-[0.35em]
+                        text-[#3E37B7]
+                        placeholder-slate-300
+                        outline-none
+                        transition
+                        focus:bg-white
+                        focus:border-[#5146C7]
+                        focus:ring-4
+                        focus:ring-[#5146C7]/10">
+
+                    <p class="mt-2 text-[11px] text-slate-400">Code expires in 10 minutes</p>
+                </div>
+
+                <button type="submit" class="w-full
+                    h-14
+                    rounded-xl
+                    bg-[#3E37B7]
+                    text-white
+                    font-semibold
+                    text-sm
+                    shadow-lg
+                    shadow-indigo-200
+                    transition-all
+                    duration-200
+                    hover:bg-[#312E81]
+                    hover:shadow-xl
+                    active:scale-[0.98]
+                    flex items-center justify-center gap-2">
+                    Verify Code →
+                </button>
+
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between text-xs">
+                <a href="forgot_password.php" class="font-semibold text-[#5146C7] hover:text-[#312E81] transition">
+                    Request New Code
+                </a>
+                <a href="login.php" class="font-medium text-slate-500 hover:text-slate-800 transition">
+                    Back to Login
+                </a>
+            </div>
+
         </div>
 
-    <?php endif; ?>
+        <!-- FOOTER -->
+        <p class="text-center text-[11px] text-slate-400 mt-6">
+            © <?= date('Y') ?> Subnext. Digital Services, Simplified.
+        </p>
 
-    <form method="POST">
+    </div>
 
-        <input
-            type="hidden"
-            name="csrf_token"
-            value="<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"
-        >
-
-        <input
-            type="text"
-            name="otp"
-            maxlength="6"
-            inputmode="numeric"
-            pattern="[0-9]{6}"
-            placeholder="000000"
-            autocomplete="one-time-code"
-            required
-        >
-
-        <button type="submit">
-            Verify Code
-        </button>
-
-    </form>
-
-    <a href="forgot_password.php">
-        Request New Code
-    </a>
-
-    <p style="margin-top: 24px; font-size: 11px; color: #94a3b8; text-align: center;">© <?= date('Y') ?> Subnext. All rights reserved.</p>
-
-</div>
-
-<script src="assets/js/loader.js" defer></script>
+    <script src="assets/js/loader.js" defer></script>
 </body>
 
 </html>

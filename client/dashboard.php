@@ -77,6 +77,7 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="dashboard.php" class="rounded-xl bg-servora-50 px-3.5 py-2 text-xs font-bold text-servora-700">Dashboard</a>
             <a href="orders.php" class="rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-servora-700 hover:bg-slate-50">My Orders</a>
             <a href="wallet.php" class="rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-servora-700 hover:bg-slate-50">Wallet</a>
+            <a href="support.php" class="rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-servora-700 hover:bg-slate-50">Support</a>
             <a href="profile.php" class="rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-servora-700 hover:bg-slate-50">Profile</a>
         </nav>
 
@@ -308,6 +309,26 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">WAEC, NECO & JAMB tokens.</p>
                 </div>
                 <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-purple-700">
+                    <span>Open</span>
+                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </div>
+            </a>
+
+            <!-- 8. Support Center -->
+            <a href="support.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-servora-300 hover:shadow-md active:scale-[0.98]">
+                <div>
+                    <div class="flex items-center justify-between mb-2.5">
+                        <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-servora-50 text-servora-700">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.876-.876c.15-.71.39-1.393.708-2.023C3.805 16.592 3 14.414 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                            </svg>
+                        </div>
+                        <span class="rounded-md bg-servora-50 px-2 py-0.5 text-[10px] font-bold text-servora-800">Help</span>
+                    </div>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-servora-700 leading-tight">Support Center</h3>
+                    <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">Tickets, replies & quick assistance.</p>
+                </div>
+                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-servora-700">
                     <span>Open</span>
                     <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 </div>

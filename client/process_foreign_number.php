@@ -12,6 +12,164 @@ if ($userId <= 0) {
     exit;
 }
 
+/**
+ * Render a professional Subnext error screen instead of plain unstyled text.
+ */
+function renderProcessError(string $title, string $message, array $options = []): void {
+    $httpCode = (int) ($options['code'] ?? 400);
+    http_response_code($httpCode);
+
+    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+        || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'));
+
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status' => 'error',
+            'title' => $title,
+            'message' => $message
+        ]);
+        exit;
+    }
+
+    $fundWalletUrl = $options['fund_wallet_url'] ?? 'fund_wallet.php';
+    $backUrl = $options['back_url'] ?? 'foreign_numbers.php';
+    $backText = $options['back_text'] ?? 'Back to Foreign Numbers';
+    $isBalanceError = !empty($options['is_balance_error']);
+    $requiredAmount = isset($options['required_amount']) ? (float)$options['required_amount'] : null;
+    $availableBalance = isset($options['available_balance']) ? (float)$options['available_balance'] : null;
+    $serviceName = trim((string)($options['service_name'] ?? ''));
+    $countryName = trim((string)($options['country_name'] ?? ''));
+    ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($title) ?> | Subnext</title>
+    <!-- Precompiled Production Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="min-h-screen bg-[#F6F7FB] text-slate-900 antialiased flex flex-col justify-between selection:bg-[#3E37B7] selection:text-white pb-20 md:pb-0">
+
+    <!-- TOPBAR -->
+    <header class="w-full bg-white border-b border-slate-200/80 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <a href="dashboard.php" class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-[#3E37B7] text-white flex items-center justify-center font-black text-lg shadow-sm">
+                    S
+                </div>
+                <div>
+                    <div class="font-extrabold text-slate-900 tracking-tight leading-tight">Subnext</div>
+                    <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Virtual Number Service</div>
+                </div>
+            </a>
+            <div class="flex items-center gap-2">
+                <a href="dashboard.php" class="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition">
+                    Dashboard
+                </a>
+                <a href="wallet.php" class="text-xs font-semibold text-[#3E37B7] bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">
+                    My Wallet
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">
+        <div class="w-full max-w-md">
+            <div class="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 text-center">
+                
+                <!-- ICON BADGE -->
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl <?= $isBalanceError ? 'bg-amber-50 text-amber-600 ring-8 ring-amber-50/70' : 'bg-rose-50 text-rose-600 ring-8 ring-rose-50/70' ?> mb-4 shadow-sm">
+                    <?php if ($isBalanceError): ?>
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                    <?php else: ?>
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    <?php endif; ?>
+                </div>
+
+                <!-- TITLE & MESSAGE -->
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                    <?= htmlspecialchars($title) ?>
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
+                    <?= htmlspecialchars($message) ?>
+                </p>
+
+                <?php if ($isBalanceError && $requiredAmount !== null && $availableBalance !== null): ?>
+                    <!-- BALANCE BREAKDOWN -->
+                    <div class="mt-5 mb-6 rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-2.5 text-xs text-left">
+                        <?php if ($serviceName !== '' || $countryName !== ''): ?>
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                                <span class="text-slate-500 font-medium">Selected Service</span>
+                                <span class="font-semibold text-slate-800"><?= htmlspecialchars(trim($serviceName . ' ' . ($countryName ? "($countryName)" : ''))) ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500 font-medium">Order Cost</span>
+                            <span class="font-bold text-slate-900">₦<?= number_format($requiredAmount, 2) ?></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500 font-medium">Available Balance</span>
+                            <span class="font-semibold text-rose-600">₦<?= number_format($availableBalance, 2) ?></span>
+                        </div>
+                        <?php $shortfall = max(0, $requiredAmount - $availableBalance); ?>
+                        <?php if ($shortfall > 0): ?>
+                            <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-slate-700">
+                                <span class="font-medium text-slate-600">Funding Needed</span>
+                                <span class="font-bold text-amber-700">₦<?= number_format($shortfall, 2) ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="my-4"></div>
+                <?php endif; ?>
+
+                <!-- ACTION BUTTONS -->
+                <div class="space-y-3">
+                    <?php if ($isBalanceError): ?>
+                        <a href="<?= htmlspecialchars($fundWalletUrl) ?>" class="w-full h-12 sm:h-14 rounded-xl bg-[#3E37B7] hover:bg-[#312E81] text-white font-bold text-sm shadow-lg shadow-indigo-200 transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            <span>Fund Wallet Now</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <a href="<?= htmlspecialchars($backUrl) ?>" class="w-full h-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        <span><?= htmlspecialchars($backText) ?></span>
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <p class="text-center text-[11px] text-slate-400 mt-6">
+                &copy; <?= date('Y') ?> Subnext. Digital Services, Simplified.
+            </p>
+        </div>
+    </main>
+
+    <?php 
+    $clientBottomNav = __DIR__ . '/../includes/client_bottom_nav.php';
+    if (file_exists($clientBottomNav)) {
+        require_once $clientBottomNav;
+    }
+    ?>
+</body>
+</html>
+    <?php
+    exit;
+}
+
 /*
 |--------------------------------------------------------------------------
 | POST ONLY
@@ -45,8 +203,15 @@ if (
         $csrfToken
     )
 ) {
-    http_response_code(403);
-    exit("Invalid request.");
+    renderProcessError(
+        "Invalid Request",
+        "Your session or request security verification failed. Please try again.",
+        [
+            'code' => 403,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
+    );
 }
 
 /*
@@ -65,8 +230,15 @@ if (
         $requestToken
     )
 ) {
-    http_response_code(400);
-    exit("Invalid request token.");
+    renderProcessError(
+        "Invalid Request Token",
+        "Invalid order security token. Please return to foreign numbers and try again.",
+        [
+            'code' => 400,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
+    );
 }
 
 $requestTokens =
@@ -74,10 +246,14 @@ $requestTokens =
     ?? [];
 
 if (!isset($requestTokens[$requestToken])) {
-    http_response_code(409);
-
-    exit(
-        "This request has expired or has already been processed."
+    renderProcessError(
+        "Order Session Expired",
+        "This request has expired or has already been processed.",
+        [
+            'code' => 409,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
     );
 }
 
@@ -248,8 +424,15 @@ foreach ($services as $service) {
 }
 
 if ($selectedService === null) {
-    http_response_code(422);
-    exit("Invalid service.");
+    renderProcessError(
+        "Invalid Service",
+        "The requested virtual number service is invalid or unavailable.",
+        [
+            'code' => 422,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
+    );
 }
 
 /*
@@ -272,10 +455,14 @@ try {
         . $e->getMessage()
     );
 
-    http_response_code(503);
-
-    exit(
-        "Could not verify the selected country."
+    renderProcessError(
+        "Country Lookup Failed",
+        "Could not verify the selected country. Please try again later.",
+        [
+            'code' => 503,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
     );
 }
 
@@ -316,10 +503,14 @@ foreach ($countries as $country) {
 }
 
 if ($selectedCountry === null) {
-    http_response_code(422);
-
-    exit(
-        "The selected country is unavailable."
+    renderProcessError(
+        "Country Unavailable",
+        "The selected country is unavailable for this service. Please choose another country.",
+        [
+            'code' => 422,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
     );
 }
 
@@ -350,10 +541,14 @@ try {
         . $e->getMessage()
     );
 
-    http_response_code(503);
-
-    exit(
-        "Could not verify the selected number option."
+    renderProcessError(
+        "Option Lookup Failed",
+        "Could not verify the selected number option. Please try again later.",
+        [
+            'code' => 503,
+            'back_url' => 'foreign_number_options.php?service=' . urlencode($serviceCode),
+            'back_text' => 'Choose Another Option'
+        ]
     );
 }
 
@@ -421,10 +616,14 @@ foreach ($options as $option) {
 }
 
 if ($selectedOption === null) {
-    http_response_code(422);
-
-    exit(
-        "The selected number option is no longer available."
+    renderProcessError(
+        "Option Unavailable",
+        "The selected number option is no longer available in stock. Please select another option.",
+        [
+            'code' => 422,
+            'back_url' => 'foreign_number_options.php?service=' . urlencode($serviceCode),
+            'back_text' => 'Choose Another Option'
+        ]
     );
 }
 
@@ -466,10 +665,14 @@ if (
     || $sellingPrice <= 0
     || $sellingPrice < $providerCost
 ) {
-    http_response_code(503);
-
-    exit(
-        "The price for this order could not be calculated."
+    renderProcessError(
+        "Pricing Error",
+        "The price for this order could not be calculated. Please try again later.",
+        [
+            'code' => 503,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
     );
 }
 
@@ -694,8 +897,21 @@ try {
     $currentBalance = (float)$wallet['balance'];
     if ($currentBalance < $sellingPrice) {
         $pdo->rollBack();
-        http_response_code(400);
-        exit("Insufficient wallet balance. Please fund your wallet to continue.");
+        renderProcessError(
+            "Insufficient Wallet Balance",
+            "Insufficient wallet balance. Please fund your wallet to continue.",
+            [
+                'code' => 400,
+                'is_balance_error' => true,
+                'required_amount' => $sellingPrice,
+                'available_balance' => $currentBalance,
+                'service_name' => $selectedService['name'] ?? '',
+                'country_name' => $selectedCountry['name'] ?? '',
+                'fund_wallet_url' => 'fund_wallet.php',
+                'back_url' => 'foreign_number_options.php?service=' . urlencode($serviceCode),
+                'back_text' => 'Choose Another Country'
+            ]
+        );
     }
 
     $newBalance = round($currentBalance - $sellingPrice, 2);
@@ -812,10 +1028,14 @@ try {
         . $e->getMessage()
     );
 
-    http_response_code(500);
-
-    exit(
-        "Could not create the virtual number order."
+    renderProcessError(
+        "Order Processing Failed",
+        "Could not create the virtual number order. Please contact support or try again.",
+        [
+            'code' => 500,
+            'back_url' => 'foreign_numbers.php',
+            'back_text' => 'Back to Foreign Numbers'
+        ]
     );
 }
 
