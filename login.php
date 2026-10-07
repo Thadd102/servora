@@ -162,14 +162,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Login - Subnext</title>
 
-    <meta name="description" content="Sign in to your Subnext account to manage data bundles, airtime, cable TV, electricity, and digital services securely.">
+    <meta name="description"
+        content="Sign in to your Subnext account to manage data bundles, airtime, cable TV, electricity, and digital services securely.">
 
     <!-- Precompiled Production Stylesheet -->
     <link rel="stylesheet" href="assets/css/style.css">
@@ -181,41 +179,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <main class="min-h-screen flex flex-col lg:flex-row">
 
         <!-- LEFT BRAND SECTION -->
-        <div
-            class="relative hidden lg:flex lg:w-1/2
+        <div class="relative hidden lg:flex lg:w-1/2
             bg-gradient-to-br from-[#3E37B7] via-[#5146C7] to-[#312E81]
-            overflow-hidden"
-        >
+            overflow-hidden">
 
             <!-- Decorative circles -->
-            <div
-                class="absolute -top-24 -left-24
+            <div class="absolute -top-24 -left-24
                 w-72 h-72 rounded-full
-                bg-white/10"
-            ></div>
+                bg-white/10"></div>
 
-            <div
-                class="absolute -bottom-32 -right-20
+            <div class="absolute -bottom-32 -right-20
                 w-96 h-96 rounded-full
-                bg-white/10"
-            ></div>
+                bg-white/10"></div>
 
-            <div
-                class="relative z-10
+            <div class="relative z-10
                 flex flex-col justify-center
                 px-16 xl:px-24
-                text-white"
-            >
+                text-white">
 
                 <div class="mb-10">
 
                     <div class="flex items-center gap-3">
 
-                        <div
-                            class="w-12 h-12 rounded-2xl
+                        <div class="w-12 h-12 rounded-2xl
                             bg-white/15 backdrop-blur-sm
-                            flex items-center justify-center"
-                        >
+                            flex items-center justify-center">
 
                             <span class="text-2xl font-bold">
                                 S
@@ -231,23 +219,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 </div>
 
-                <h1
-                    class="text-5xl xl:text-6xl
+                <h1 class="text-5xl xl:text-6xl
                     font-bold leading-tight
-                    max-w-xl"
-                >
+                    max-w-xl">
                     Digital Services,
                     <span class="text-purple-200">
                         Simplified.
                     </span>
                 </h1>
 
-                <p
-                    class="mt-6
+                <p class="mt-6
                     text-lg text-purple-100
                     leading-relaxed
-                    max-w-lg"
-                >
+                    max-w-lg">
                     Access the services you need, track your requests,
                     manage your wallet and receive your results — all
                     from one place.
@@ -255,13 +239,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div class="mt-10 flex items-center gap-4">
 
-                    <div
-                        class="flex items-center
+                    <div class="flex items-center
                         justify-center
                         w-11 h-11
                         rounded-xl
-                        bg-white/10"
-                    >
+                        bg-white/10">
                         ✓
                     </div>
 
@@ -284,27 +266,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
         <!-- LOGIN SECTION -->
-        <div
-            class="flex-1
+        <div class="flex-1
             flex items-center justify-center
             px-5 py-10
-            sm:px-8"
-        >
+            sm:px-8">
 
             <div class="w-full max-w-md">
 
                 <!-- MOBILE LOGO -->
                 <div class="lg:hidden text-center mb-8">
 
-                    <div
-                        class="inline-flex items-center
+                    <div class="inline-flex items-center
                         justify-center
                         w-14 h-14
                         rounded-2xl
                         bg-[#3E37B7]
                         text-white
-                        shadow-lg shadow-indigo-200"
-                    >
+                        shadow-lg shadow-indigo-200">
 
                         <span class="text-2xl font-bold">
                             S
@@ -312,12 +290,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     </div>
 
-                    <h1
-                        class="mt-3
+                    <h1 class="mt-3
                         text-2xl
                         font-bold
-                        text-gray-900"
-                    >
+                        text-gray-900">
                         Subnext
                     </h1>
 
@@ -330,40 +306,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
                 <!-- LOGIN CARD -->
-                <div
-                    class="bg-white
+                <div class="bg-white
                     rounded-3xl
                     border border-gray-100
                     shadow-xl shadow-gray-200/50
                     p-6
-                    sm:p-8"
-                >
+                    sm:p-8">
 
                     <!-- HEADER -->
                     <div class="mb-8">
 
-                        <p
-                            class="text-sm
+                        <p class="text-sm
                             font-semibold
                             text-[#5146C7]
-                            mb-2"
-                        >
+                            mb-2">
                             WELCOME BACK
                         </p>
 
-                        <h2
-                            class="text-2xl sm:text-3xl
+                        <h2 class="text-2xl sm:text-3xl
                             font-bold
-                            text-gray-900"
-                        >
+                            text-gray-900">
                             Sign in to Subnext
                         </h2>
 
-                        <p
-                            class="mt-2
+                        <p class="mt-2
                             text-sm
-                            text-gray-500"
-                        >
+                            text-gray-500">
                             Enter your details to continue.
                         </p>
 
@@ -376,21 +344,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                         <?php if ($isMaintenanceMessage): ?>
 
-                            <div
-                                class="mb-6
+                            <div class="mb-6
                                 rounded-2xl
                                 bg-amber-50
                                 border border-amber-200
                                 px-4 py-4
-                                text-amber-800"
-                            >
+                                text-amber-800">
 
                                 <div class="flex items-start gap-3">
 
-                                    <div
-                                        class="flex h-9 w-9 shrink-0 items-center justify-center
-                                        rounded-xl bg-amber-100 text-lg"
-                                    >
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center
+                                        rounded-xl bg-amber-100 text-lg">
                                         🔧
                                     </div>
 
@@ -413,15 +377,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                         <?php else: ?>
 
-                            <div
-                                class="mb-6
+                            <div class="mb-6
                                 rounded-xl
                                 bg-red-50
                                 border border-red-100
                                 px-4 py-3
                                 text-sm
-                                text-red-700"
-                            >
+                                text-red-700">
 
                                 <?= htmlspecialchars($message) ?>
 
@@ -434,63 +396,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
                     <!-- FORM -->
-                    <form
-                        method="POST"
-                        action="login.php"
-                        class="space-y-5"
-                    >
-<?= csrfField() ?>
+                    <form method="POST" action="login.php" class="space-y-5">
+                        <?= csrfField() ?>
 
                         <!-- EMAIL -->
                         <div>
 
-                            <label
-                                for="email"
-                                class="block
+                            <label for="email" class="block
                                 text-sm
                                 font-semibold
                                 text-gray-700
-                                mb-2"
-                            >
+                                mb-2">
                                 Email address
                             </label>
 
                             <div class="relative">
 
-                                <div
-                                    class="absolute
+                                <div class="absolute
                                     inset-y-0 left-0
                                     pl-4
                                     flex items-center
-                                    pointer-events-none"
-                                >
+                                    pointer-events-none">
 
-                                    <svg
-                                        class="w-5 h-5 text-gray-400"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
 
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="1.8"
-                                            d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                        />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                            d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
 
                                     </svg>
 
                                 </div>
 
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    required
-                                    autocomplete="email"
-                                    value="<?= htmlspecialchars($_POST["email"] ?? "") ?>"
-                                    placeholder="you@example.com"
+                                <input type="email" id="email" name="email" required autocomplete="email"
+                                    value="<?= htmlspecialchars($_POST["email"] ?? "") ?>" placeholder="you@example.com"
                                     class="w-full
                                     h-14
                                     rounded-xl
@@ -504,8 +443,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                     focus:bg-white
                                     focus:border-[#5146C7]
                                     focus:ring-4
-                                    focus:ring-[#5146C7]/10"
-                                >
+                                    focus:ring-[#5146C7]/10">
 
                             </div>
 
@@ -516,29 +454,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <!-- PASSWORD -->
                         <div>
 
-                            <div
-                                class="flex items-center
+                            <div class="flex items-center
                                 justify-between
-                                mb-2"
-                            >
+                                mb-2">
 
-                                <label
-                                    for="password"
-                                    class="block
+                                <label for="password" class="block
                                     text-sm
                                     font-semibold
-                                    text-gray-700"
-                                >
+                                    text-gray-700">
                                     Password
                                 </label>
 
-                                <a
-                                    href="forgot_password.php"
-                                    class="text-sm
+                                <a href="forgot_password.php" class="text-sm
                                     font-semibold
                                     text-[#5146C7]
-                                    hover:text-[#3E37B7]"
-                                >
+                                    hover:text-[#3E37B7]">
                                     Forgot password?
                                 </a>
 
@@ -546,40 +476,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                             <div class="relative">
 
-                                <div
-                                    class="absolute
+                                <div class="absolute
                                     inset-y-0 left-0
                                     pl-4
                                     flex items-center
-                                    pointer-events-none"
-                                >
+                                    pointer-events-none">
 
-                                    <svg
-                                        class="w-5 h-5 text-gray-400"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
 
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="1.8"
-                                            d="M15 11V7a3 3 0 00-6 0v4m-2 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z"
-                                        />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                            d="M15 11V7a3 3 0 00-6 0v4m-2 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" />
 
                                     </svg>
 
                                 </div>
 
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    required
-                                    autocomplete="current-password"
-                                    placeholder="Enter your password"
-                                    class="w-full
+                                <input type="password" id="password" name="password" required
+                                    autocomplete="current-password" placeholder="Enter your password" class="w-full
                                     h-14
                                     rounded-xl
                                     border border-gray-200
@@ -592,8 +506,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                     focus:bg-white
                                     focus:border-[#5146C7]
                                     focus:ring-4
-                                    focus:ring-[#5146C7]/10"
-                                >
+                                    focus:ring-[#5146C7]/10">
 
                             </div>
 
@@ -602,9 +515,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
                         <!-- LOGIN BUTTON -->
-                        <button
-                            type="submit"
-                            class="w-full
+                        <button type="submit" class="w-full
                             h-14
                             rounded-xl
                             bg-[#3E37B7]
@@ -617,8 +528,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             duration-200
                             hover:bg-[#312E81]
                             hover:shadow-xl
-                            active:scale-[0.98]"
-                        >
+                            active:scale-[0.98]">
                             Sign In
                         </button>
 
@@ -627,23 +537,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
                     <!-- REGISTER -->
-                    <div
-                        class="mt-7
+                    <div class="mt-7
                         pt-6
                         border-t border-gray-100
-                        text-center"
-                    >
+                        text-center">
 
                         <p class="text-sm text-gray-500">
 
-                            Don't have an account?
+                            Don't have an accccc?
 
-                            <a
-                                href="register.php"
-                                class="font-semibold
+                            <a href="register.php" class="font-semibold
                                 text-[#3E37B7]
-                                hover:text-[#312E81]"
-                            >
+                                hover:text-[#312E81]">
                                 Create Account
                             </a>
 
@@ -656,12 +561,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
                 <!-- FOOTER -->
-                <p
-                    class="text-center
+                <p class="text-center
                     text-xs
                     text-gray-500
-                    mt-6"
-                >
+                    mt-6">
                     © <?= date('Y') ?> Subnext. All rights reserved.
                 </p>
 
