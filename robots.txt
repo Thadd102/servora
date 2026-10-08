@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /login.php
+Allow: /register.php
+Allow: /forgot_password.php
+
+# Disallow authenticated client/admin portals and backend files
+Disallow: /admin/
+Disallow: /client/
+Disallow: /config/
+Disallow: /includes/
+Disallow: /database/
+Disallow: /uploads/
+Disallow: /vendor/
+Disallow: /payment/
+Disallow: /verify/
+Disallow: /verify_otp.php
+Disallow: /reset_password.php
+
+# XML Sitemap
+Sitemap: https://subnext.com.ng/sitemap.xml
