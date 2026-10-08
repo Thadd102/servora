@@ -31,16 +31,16 @@ class EmailService
 
     /**
      * Build and configure a secure PHPMailer instance using .env credentials
-     * Configured for GO54 production email (mail.subnext.com.ng on port 587 with STARTTLS).
+     * Configured for Gmail SMTP email (smtp.gmail.com on port 587 with STARTTLS).
      */
     public static function createMailer(?array &$debugCapture = null): PHPMailer
     {
         $mail = new PHPMailer(true);
 
         // Retrieve credentials and settings via subnextEnv (supports memory cache, getenv, $_ENV, $_SERVER)
-        $host = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_HOST', 'mail.subnext.com.ng') : (getenv('SMTP_HOST') ?: 'mail.subnext.com.ng')));
+        $host = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_HOST', 'smtp.gmail.com') : (getenv('SMTP_HOST') ?: 'smtp.gmail.com')));
         if ($host === '') {
-            $host = 'mail.subnext.com.ng';
+            $host = 'smtp.gmail.com';
         }
 
         $port = (int)(function_exists('subnextEnv') ? subnextEnv('SMTP_PORT', '587') : (getenv('SMTP_PORT') ?: 587));
@@ -53,7 +53,7 @@ class EmailService
 
         $fromEmail = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_FROM_EMAIL', '') : (getenv('SMTP_FROM_EMAIL') ?: '')));
         if ($fromEmail === '') {
-            $fromEmail = $username !== '' ? $username : 'support@subnext.com.ng';
+            $fromEmail = $username !== '' ? $username : 'subnext.com@gmail.com';
         }
 
         $fromName = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_FROM_NAME', 'Subnext') : (getenv('SMTP_FROM_NAME') ?: 'Subnext')));
@@ -92,6 +92,8 @@ class EmailService
         // Authenticate credentials loaded before setting sender
         $mail->setFrom($fromEmail, $fromName);
         $mail->addReplyTo($fromEmail, $fromName);
+        $mail->addCustomHeader('Auto-Submitted', 'auto-generated');
+        $mail->addCustomHeader('X-Auto-Response-Suppress', 'OOF, AutoReply');
 
         // Safe temporary diagnostic logging (Zero secrets or passwords logged)
         $envSource = function_exists('getEnvFilePath') ? (getEnvFilePath() ?: 'None/Not found') : 'Unknown';
@@ -355,7 +357,7 @@ class EmailService
         }
 
         // Safe connection metadata
-        $host = $mail ? $mail->Host : (function_exists('subnextEnv') ? subnextEnv('SMTP_HOST', 'mail.subnext.com.ng') : (getenv('SMTP_HOST') ?: 'mail.subnext.com.ng'));
+        $host = $mail ? $mail->Host : (function_exists('subnextEnv') ? subnextEnv('SMTP_HOST', 'smtp.gmail.com') : (getenv('SMTP_HOST') ?: 'smtp.gmail.com'));
         $port = $mail ? $mail->Port : (int)(function_exists('subnextEnv') ? subnextEnv('SMTP_PORT', '587') : (getenv('SMTP_PORT') ?: 587));
         $secureMode = $mail ? $mail->SMTPSecure : 'tls';
         $rawUser = (string)(function_exists('subnextEnv') ? subnextEnv('SMTP_USERNAME', '') : (getenv('SMTP_USERNAME') ?: ''));

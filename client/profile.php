@@ -9,6 +9,7 @@
 
 require_once "../config/database.php";
 require_once "../includes/client_auth.php";
+require_once "../includes/EmailService.php";
 
 $userId = currentUserId();
 
@@ -110,8 +111,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     "expires"   => time() + 900 // 15 minutes validity
                 ];
 
+                $mailSent = EmailService::sendOtpEmail($newEmail, $user['full_name'] ?? 'Client', $verificationCode, 'Email Address Change');
+
                 $activeModal = "email_confirm";
-                $infoNotice = "A 6-digit confirmation code has been generated for <strong>" . htmlspecialchars($newEmail) . "</strong>. Enter the code below to activate your new email.";
+                $infoNotice = "A 6-digit confirmation code has been sent to <strong>" . htmlspecialchars($newEmail) . "</strong>. Enter the code below to activate your new email.";
             }
         }
     }
