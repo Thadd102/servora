@@ -140,7 +140,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     error_log("OTP mail delivery failed: " . $e->getMessage());
 
                     $error =
-                        "Unable to send verification OTP email. Please verify mail server settings or contact support@subnext.com.ng.";
+                        "Unable to send verification OTP email: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . ". Please verify mail server settings or contact support@subnext.com.ng.";
 
                 } catch (PDOException $e) {
 

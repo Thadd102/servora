@@ -33,7 +33,7 @@ class EmailService
      * Build and configure a secure PHPMailer instance using .env credentials
      * Configured for Gmail SMTP email (smtp.gmail.com on port 587 with STARTTLS).
      */
-    public static function createMailer(?array &$debugCapture = null): PHPMailer
+    public static function createMailer(?array &$debugCapture = null, ?int $overridePort = null): PHPMailer
     {
         $mail = new PHPMailer(true);
 
@@ -43,9 +43,9 @@ class EmailService
             $host = 'smtp.gmail.com';
         }
 
-        $port = (int)(function_exists('subnextEnv') ? subnextEnv('SMTP_PORT', '587') : (getenv('SMTP_PORT') ?: 587));
+        $port = $overridePort ?? (int)(function_exists('subnextEnv') ? subnextEnv('SMTP_PORT', '465') : (getenv('SMTP_PORT') ?: 465));
         if ($port <= 0) {
-            $port = 587;
+            $port = 465;
         }
 
         $username = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_USERNAME', '') : (getenv('SMTP_USERNAME') ?: '')));
@@ -230,11 +230,29 @@ class EmailService
         } catch (Exception $e) {
             self::$lastError = $e->getMessage() . ($mail && !empty($mail->ErrorInfo) ? ' (' . $mail->ErrorInfo . ')' : '');
             self::logSmtpError('OTP Email (PHPMailer)', $e, $mail, $recipientEmail, $debugEntries);
-            return false;
+
+            if ($mail && (int)$mail->Port !== 465) {
+                try {
+                    $retryMail = self::createMailer($debugEntries, 465);
+                    $retryMail->addAddress($recipientEmail, $recipientName);
+                    $retryMail->isHTML(true);
+                    $retryMail->Subject = "Your Subnext Verification Code: {$otp}";
+                    $retryMail->Body = $mail->Body;
+                    $retryMail->AltBody = $mail->AltBody;
+                    $retryMail->send();
+                    self::$lastError = null;
+                    error_log("[EmailService] Retry on Port 465 SUCCEEDED for {$recipientEmail}");
+                    return true;
+                } catch (Throwable $retryErr) {
+                    error_log("[EmailService] Retry on Port 465 FAILED: " . $retryErr->getMessage());
+                }
+            }
+
+            return self::tryFallbackMail($recipientEmail, $recipientName, $mail->Subject ?? "Your Subnext Verification Code: {$otp}", $mail->Body ?? '', $mail->AltBody ?? '');
         } catch (Throwable $e) {
             self::$lastError = $e->getMessage();
             self::logSmtpError('OTP Email (General)', $e, $mail, $recipientEmail, $debugEntries);
-            return false;
+            return self::tryFallbackMail($recipientEmail, $recipientName, "Your Subnext Verification Code: {$otp}", '', '');
         }
     }
 
@@ -327,10 +345,56 @@ class EmailService
         } catch (Exception $e) {
             self::$lastError = $e->getMessage() . ($mail && !empty($mail->ErrorInfo) ? ' (' . $mail->ErrorInfo . ')' : '');
             self::logSmtpError('Ticket Notification (PHPMailer)', $e, $mail, $recipientEmail, $debugEntries);
-            return false;
+            return self::tryFallbackMail($recipientEmail, $recipientName, $mail->Subject ?? "[Subnext Support] New reply on ticket {$ticketCode}", $mail->Body ?? '', $mail->AltBody ?? '');
         } catch (Throwable $e) {
             self::$lastError = $e->getMessage();
             self::logSmtpError('Ticket Notification (General)', $e, $mail, $recipientEmail, $debugEntries);
+            return self::tryFallbackMail($recipientEmail, $recipientName, "[Subnext Support] New reply on ticket {$ticketCode}", '', '');
+        }
+    }
+
+    /**
+     * Fallback mail delivery using PHP mail() if SMTP fails (e.g. host firewall blocking outbound SMTP)
+     */
+    private static function tryFallbackMail(
+        string $recipientEmail,
+        string $recipientName,
+        string $subject,
+        string $body,
+        string $altBody
+    ): bool {
+        if ($body === '') {
+            return false;
+        }
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isMail();
+            $fromEmail = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_FROM_EMAIL', '') : (getenv('SMTP_FROM_EMAIL') ?: '')));
+            if ($fromEmail === '') {
+                $fromEmail = 'subnext.com@gmail.com';
+            }
+            $fromName = trim((string)(function_exists('subnextEnv') ? subnextEnv('SMTP_FROM_NAME', 'Subnext') : (getenv('SMTP_FROM_NAME') ?: 'Subnext')));
+            if ($fromName === '') {
+                $fromName = 'Subnext';
+            }
+
+            $mail->setFrom($fromEmail, $fromName);
+            $mail->addReplyTo($fromEmail, $fromName);
+            $mail->addAddress($recipientEmail, $recipientName);
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = $body;
+            $mail->AltBody = $altBody;
+            $mail->CharSet = 'UTF-8';
+            $mail->addCustomHeader('Auto-Submitted', 'auto-generated');
+            $mail->addCustomHeader('X-Auto-Response-Suppress', 'OOF, AutoReply');
+            $mail->send();
+
+            error_log("[EmailService] Fallback to PHP mail() SUCCEEDED for {$recipientEmail}");
+            self::$lastError = null;
+            return true;
+        } catch (Throwable $e) {
+            error_log("[EmailService] Fallback to PHP mail() FAILED: " . $e->getMessage());
             return false;
         }
     }
