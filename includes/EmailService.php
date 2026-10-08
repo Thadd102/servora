@@ -19,6 +19,16 @@ use PHPMailer\PHPMailer\Exception;
 
 class EmailService
 {
+    private static ?string $lastError = null;
+
+    /**
+     * Get the last recorded email sending error message
+     */
+    public static function getLastError(): ?string
+    {
+        return self::$lastError;
+    }
+
     /**
      * Build and configure a secure PHPMailer instance using .env credentials
      * Configured for GO54 production email (mail.subnext.com.ng on port 587 with STARTTLS).
@@ -213,11 +223,14 @@ class EmailService
                 . "support@subnext.com.ng";
 
             $mail->send();
+            self::$lastError = null;
             return true;
         } catch (Exception $e) {
+            self::$lastError = $e->getMessage() . ($mail && !empty($mail->ErrorInfo) ? ' (' . $mail->ErrorInfo . ')' : '');
             self::logSmtpError('OTP Email (PHPMailer)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         } catch (Throwable $e) {
+            self::$lastError = $e->getMessage();
             self::logSmtpError('OTP Email (General)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         }
@@ -307,11 +320,14 @@ class EmailService
                 . "Team Subnext";
 
             $mail->send();
+            self::$lastError = null;
             return true;
         } catch (Exception $e) {
+            self::$lastError = $e->getMessage() . ($mail && !empty($mail->ErrorInfo) ? ' (' . $mail->ErrorInfo . ')' : '');
             self::logSmtpError('Ticket Notification (PHPMailer)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         } catch (Throwable $e) {
+            self::$lastError = $e->getMessage();
             self::logSmtpError('Ticket Notification (General)', $e, $mail, $recipientEmail, $debugEntries);
             return false;
         }

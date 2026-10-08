@@ -2,10 +2,6 @@
 
 require_once "config/database.php";
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require_once __DIR__ . "/vendor/autoload.php";
 require_once __DIR__ . "/includes/auth.php";
 require_once __DIR__ . "/includes/EmailService.php";
 
@@ -64,6 +60,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 );
 
                 try {
+                    // Ensure password_resets table exists
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS password_resets (
+                            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                            user_id BIGINT UNSIGNED NOT NULL,
+                            otp_hash VARCHAR(255) NOT NULL,
+                            attempts INT DEFAULT 0,
+                            used TINYINT(1) DEFAULT 0,
+                            expires_at DATETIME NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            INDEX idx_pwreset_user (user_id),
+                            INDEX idx_pwreset_used (used)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    ");
 
                     $pdo->beginTransaction();
 
@@ -113,14 +123,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     );
 
                     if (!$mailSent) {
-                        throw new RuntimeException("Mailer delivery returned false.");
+                        $lastErr = EmailService::getLastError();
+                        throw new RuntimeException($lastErr ?: "Mailer delivery returned false.");
                     }
 
                     // Go directly to OTP page
                     header("Location: verify_otp.php");
                     exit;
 
-                } catch (Exception $e) {
+                } catch (RuntimeException $e) {
 
                     if ($pdo->inTransaction()) {
                         $pdo->rollBack();
@@ -129,7 +140,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     error_log("OTP mail delivery failed: " . $e->getMessage());
 
                     $error =
-                        "Unable to send verification OTP. Please try again or contact support@subnext.com.ng.";
+                        "Unable to send verification OTP email. Please verify mail server settings or contact support@subnext.com.ng.";
+
+                } catch (PDOException $e) {
+
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+
+                    error_log("Password reset database error: " . $e->getMessage());
+
+                    $error =
+                        "Database operation failed. Please try again later.";
 
                 } catch (Throwable $e) {
 
@@ -137,7 +159,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $pdo->rollBack();
                     }
 
-                    error_log("Password reset OTP error: " . $e->getMessage());
+                    error_log("Password reset OTP error [" . get_class($e) . "]: " . $e->getMessage());
 
                     $error =
                         "Something went wrong. Please try again.";
