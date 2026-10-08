@@ -601,6 +601,48 @@ const summaryPlan = document.getElementById("summaryPlan");
 const summaryPrice = document.getElementById("summaryPrice");
 const purchaseButton = document.getElementById("purchaseButton");
 
+// Cache all initial plan options rendered by PHP (excluding placeholder options)
+const masterPlanOptions = planSelect
+    ? Array.from(planSelect.options).filter(function (opt) {
+        return opt.dataset.network !== undefined && opt.dataset.network !== "";
+    })
+    : [];
+
+function filterPlansByNetwork(networkId) {
+    if (!planSelect) {
+        return;
+    }
+
+    planSelect.innerHTML = "";
+
+    const placeholderOpt = document.createElement("option");
+    placeholderOpt.value = "";
+    placeholderOpt.textContent = networkId ? "Select data plan" : "Select network first";
+    planSelect.appendChild(placeholderOpt);
+
+    if (networkId) {
+        let matchCount = 0;
+        masterPlanOptions.forEach(function (opt) {
+            if (String(opt.dataset.network) === String(networkId)) {
+                const clonedOpt = opt.cloneNode(true);
+                clonedOpt.hidden = false;
+                clonedOpt.removeAttribute("hidden");
+                planSelect.appendChild(clonedOpt);
+                matchCount++;
+            }
+        });
+        planSelect.disabled = (matchCount === 0);
+    } else {
+        planSelect.disabled = true;
+    }
+
+    planSelect.value = "";
+
+    if (summary) {
+        summary.classList.add("hidden");
+    }
+}
+
 const networkPrefixes = {
     airtel: ["0701","0708","0802","0808","0812","0901","0902","0904","0907","0911","0912"],
     mtn: ["0703","0704","0706","0707","0803","0806","0810","0813","0814","0816","0903","0906","0913","0916"],
@@ -752,29 +794,7 @@ function validatePhone()
 
 if (networkSelect && planSelect) {
     networkSelect.addEventListener("change", function () {
-        const networkId = this.value;
-
-        planSelect.value = "";
-
-        Array.from(planSelect.options).forEach(function (option) {
-            if (!option.dataset.network) {
-                return;
-            }
-
-            option.hidden = option.dataset.network !== networkId;
-        });
-
-        if (networkId) {
-            planSelect.disabled = false;
-            planSelect.options[0].textContent = "Select data plan";
-        } else {
-            planSelect.disabled = true;
-            planSelect.options[0].textContent = "Select network first";
-        }
-
-        if (summary) {
-            summary.classList.add("hidden");
-        }
+        filterPlansByNetwork(this.value);
 
         if (phoneInput && phoneInput.value.trim() !== "") {
             validatePhone();
