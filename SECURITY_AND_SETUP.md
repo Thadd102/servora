@@ -54,23 +54,22 @@ Server environment values:
 
 Flutterwave cancellation is handled before transaction verification because a cancelled redirect may not contain a transaction_id.
 
-## Multi-Provider Data Bundles (CheapDataHub & VTPass)
-Subnext now supports dual upstream suppliers for data bundle purchases:
-- **CheapDataHub** (Provider ID: 1, `cheapdatahub`)
-- **VTPass** (Provider ID: 8, `vtpass`)
+## CheapDataHub Complete VTU Integration & VTpass Removal
+Subnext uses **CheapDataHub** (`https://www.cheapdatahub.ng`) as its primary upstream provider for all VTU services:
+- **Airtime Recharge**: MTN (1), Glo (2), Airtel (3), and 9mobile/T2 (4).
+- **Data Subscription**: Comprehensive suite of all 49 data plans across MTN, Airtel, and Glo.
+- **Cable TV**: DStv, GOtv, and StarTimes bouquets with instant smartcard verification.
+- **Electricity**: All 10 supported Nigerian Discos (AEDC, EKEDC, IBEDC, IKEDC, KAEDCO, PHED, JEDPLC, EEDC, YEDC, BEDC) with live meter validation.
+- **Exam PINs**: WAEC, NECO, and NABTEB result checker PIN generation.
 
 ### Environment Variables:
-- `VTPASS_API_KEY` — VTPass API Key
-- `VTPASS_SECRET_KEY` — VTPass Secret Key
-- `VTPASS_PUBLIC_KEY` — VTPass Public Key (optional)
-- `VTPASS_BASE_URL` — Base URL:
-  - Live: `https://api-service.vtpass.com/api`
-  - Sandbox: `https://sandbox.vtpass.com/api`
+- `CHEAPDATAHUB_API_KEY` — CheapDataHub Reseller API Bearer Token
+- `CHEAPDATAHUB_BASE_URL` — Base URL: `https://www.cheapdatahub.ng/api/v1/resellers`
 
 ### Pricing & Profit Rules:
-- **Default Profit Markup**: VTPass plans are initialized with a default profit margin of **₦50.00** per purchase (`Selling Price = Supplier Cost + ₦50.00`).
-- **Admin Customization**: Admins can customize the profit margin and selling price dynamically from the Admin Data Plans (`admin/data_plans.php`) and Edit Plan (`admin/edit_data_plan.php`) interfaces with real-time automatic calculation.
-- **Client Privacy**: Provider names, supplier costs, and profit margins are strictly hidden from clients. Clients only see the Network, Plan Name, Data Size, Validity, and final Selling Price.
-- **Provider Transparency**: Admins can filter data plans and orders by provider (CheapDataHub vs VTPass), with dedicated visual badges.
-- **Automatic Sync**: Admins can synchronize all official VTPass variation plans (MTN, Airtel, Glo, 9mobile/T2) anytime via `admin/sync_vtpass_data.php`.
+- **Supplier Price Sync**: Admins can synchronize live supplier prices directly from CheapDataHub via `admin/sync_cheapdatahub_plans.php`.
+- **Default Profit Markup**: Plans are synced with configurable default markups and supplier base costs.
+- **Admin Customization**: Admins can adjust profit margins and selling prices dynamically from `admin/data_plans.php` and `admin/edit_data_plan.php`.
+- **Client Privacy**: Supplier costs, supplier names, and profit margins are strictly hidden from clients.
+- **VTpass Removal**: All VTpass endpoints, credentials, and dependencies have been cleanly retired. Historical orders and ledger records are fully preserved.
 

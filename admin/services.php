@@ -4,6 +4,29 @@
 require_once "../config/database.php";
 require_once "../includes/admin_auth.php";
 
+if (empty($_SESSION["admin_csrf"])) {
+    $_SESSION["admin_csrf"] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION["admin_csrf"];
+
+$message = null;
+$messageType = 'success';
+
+// Handle 1-click status toggle
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "toggle_status") {
+    $submittedCsrf = trim((string)($_POST["csrf_token"] ?? ""));
+    if (!hash_equals($csrfToken, $submittedCsrf)) {
+        $message = "Invalid security token.";
+        $messageType = "error";
+    } else {
+        $serviceId = (int)($_POST["service_id"] ?? 0);
+        $newStatus = trim((string)($_POST["status"] ?? "")) === "active" ? "active" : "inactive";
+        $stmt = $pdo->prepare("UPDATE services SET status = ?, updated_at = NOW() WHERE id = ?");
+        $stmt->execute([$newStatus, $serviceId]);
+        $message = "Service status successfully updated to " . ($newStatus === 'active' ? 'Active' : 'Not Active') . ".";
+        $messageType = "success";
+    }
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +48,7 @@ $stmt = $pdo->prepare("
         created_at,
         updated_at
     FROM services
-    ORDER BY id DESC
+    ORDER BY sort_order ASC, id ASC
 ");
 
 $stmt->execute();
@@ -158,7 +181,16 @@ $services = $stmt->fetchAll();
 
     </section>
 
-
+    <?php if ($message): ?>
+    <div class="mb-6 rounded-2xl p-4 text-sm font-semibold flex items-center justify-between <?= $messageType === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200' ?>">
+        <div class="flex items-center gap-2">
+            <svg class="h-5 w-5 <?= $messageType === 'success' ? 'text-emerald-600' : 'text-rose-600' ?>" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $messageType === 'success' ? 'M5 13l4 4L19 7' : 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' ?>" />
+            </svg>
+            <span><?= htmlspecialchars($message) ?></span>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <?php if (empty($services)): ?>
 
@@ -265,15 +297,16 @@ $services = $stmt->fetchAll();
                             </div>
                         </div>
 
-                        <?php if ($service["status"] === "active"): ?>
-                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                                <span class="h-1 w-1 rounded-full bg-emerald-500"></span>
+                        <?php $isSvcActive = ($service["status"] === "active"); ?>
+                        <?php if ($isSvcActive): ?>
+                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                                 Active
                             </span>
                         <?php else: ?>
-                            <span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-bold text-red-600">
-                                <span class="h-1 w-1 rounded-full bg-red-500"></span>
-                                Inactive
+                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                Not Active
                             </span>
                         <?php endif; ?>
                     </div>
@@ -297,7 +330,16 @@ $services = $stmt->fetchAll();
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-2 pt-1">
+                    <div class="grid grid-cols-4 gap-1.5 pt-1">
+                        <form method="POST" class="inline">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                            <input type="hidden" name="action" value="toggle_status">
+                            <input type="hidden" name="service_id" value="<?= (int)$service["id"] ?>">
+                            <input type="hidden" name="status" value="<?= $isSvcActive ? 'inactive' : 'active' ?>">
+                            <button type="submit" class="w-full rounded-xl py-2 text-center text-xs font-bold transition <?= $isSvcActive ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs' ?>" onclick="return confirm('Are you sure you want to <?= $isSvcActive ? 'disable' : 'enable' ?> this service?')">
+                                <?= $isSvcActive ? 'Disable' : 'Enable' ?>
+                            </button>
+                        </form>
                         <a href="edit_service.php?id=<?= (int)$service["id"] ?>"
                             class="rounded-xl bg-slate-900 py-2 text-center text-xs font-bold text-white hover:bg-slate-800 transition">
                             Edit
@@ -498,32 +540,21 @@ $services = $stmt->fetchAll();
 
                                 <td class="px-6 py-5">
 
-                                    <?php if (
-                                        $service["status"] === "active"
-                                    ): ?>
-
+                                    <?php $isSvcActive = ($service["status"] === "active"); ?>
+                                    <?php if ($isSvcActive): ?>
                                         <span
-                                            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700"
+                                            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700"
                                         >
-
                                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-
                                             Active
-
                                         </span>
-
                                     <?php else: ?>
-
                                         <span
-                                            class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600"
+                                            class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-800"
                                         >
-
-                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
-
-                                            Inactive
-
+                                            <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                            Not Active
                                         </span>
-
                                     <?php endif; ?>
 
                                 </td>
@@ -535,6 +566,20 @@ $services = $stmt->fetchAll();
                                 <td class="px-6 py-5">
 
                                     <div class="flex flex-wrap justify-end gap-2">
+
+                                        <form method="POST" class="inline">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                            <input type="hidden" name="action" value="toggle_status">
+                                            <input type="hidden" name="service_id" value="<?= (int) $service["id"] ?>">
+                                            <input type="hidden" name="status" value="<?= $isSvcActive ? 'inactive' : 'active' ?>">
+                                            <button
+                                                type="submit"
+                                                class="inline-flex items-center justify-center rounded-xl px-3.5 py-2 text-xs font-bold transition <?= $isSvcActive ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs' ?>"
+                                                onclick="return confirm('Are you sure you want to <?= $isSvcActive ? 'disable' : 'enable' ?> this service?')"
+                                            >
+                                                <?= $isSvcActive ? 'Disable' : 'Enable' ?>
+                                            </button>
+                                        </form>
 
                                         <a
                                             href="edit_service.php?id=<?= (int) $service["id"] ?>"

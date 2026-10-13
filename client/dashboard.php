@@ -24,11 +24,20 @@ $profileInitial = strtoupper(substr($fullName, 0, 1));
 
 /*
 |--------------------------------------------------------------------------
-| ACTIVE SERVICES FROM DATABASE
+| SERVICE AVAILABILITY CONTROLS
 |--------------------------------------------------------------------------
 */
-$stmt = $pdo->query("SELECT id, name, slug, description, icon, route, status FROM services WHERE status = 'active' ORDER BY sort_order ASC");
-$activeServices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__ . "/../includes/ServiceAvailability.php";
+$servicesMap = ServiceAvailability::getAllServices($pdo);
+$isFnActive = ServiceAvailability::isServiceActive($pdo, 'foreign_numbers');
+$isDataActive = ServiceAvailability::isServiceActive($pdo, 'data');
+$isAirtimeActive = ServiceAvailability::isServiceActive($pdo, 'airtime');
+$isElecActive = ServiceAvailability::isServiceActive($pdo, 'electricity');
+$isCableActive = ServiceAvailability::isServiceActive($pdo, 'cable_tv');
+$isSmsActive = ServiceAvailability::isServiceActive($pdo, 'bulk_sms');
+$isExamActive = ServiceAvailability::isServiceActive($pdo, 'exam_pins');
+
+$activeServices = array_filter($servicesMap, fn($s) => $s['status'] === 'active');
 
 /*
 |--------------------------------------------------------------------------
@@ -172,7 +181,7 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="mt-3 sm:mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-3.5">
 
             <!-- 1. Foreign Numbers (5SIM) -->
-            <a href="foreign_numbers.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md active:scale-[0.98]">
+            <a href="foreign_numbers.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border <?= $isFnActive ? 'border-slate-200/90 bg-white hover:border-emerald-300 hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 active:scale-[0.98]">
                 <div>
                     <div class="flex items-center justify-between mb-2.5">
                         <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -181,19 +190,30 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <path stroke-linecap="round" d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>
                             </svg>
                         </div>
-                        <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">OTP</span>
+                        <?php if ($isFnActive): ?>
+                            <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">OTP</span>
+                        <?php else: ?>
+                            <span class="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">Not Active</span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-700 leading-tight">Foreign Numbers</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 <?= $isFnActive ? 'group-hover:text-emerald-700' : 'group-hover:text-amber-800' ?> leading-tight">Foreign Numbers</h3>
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">Virtual SMS numbers for WhatsApp & Telegram.</p>
                 </div>
-                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-emerald-700">
-                    <span>Open</span>
-                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isFnActive): ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-emerald-700">
+                        <span>Open</span>
+                        <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-800">
+                        <span>Service Paused</span>
+                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
 
             <!-- 2. Data Bundles (CheapDataHub) -->
-            <a href="buy_data.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md active:scale-[0.98]">
+            <a href="buy_data.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border <?= $isDataActive ? 'border-slate-200/90 bg-white hover:border-sky-300 hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 active:scale-[0.98]">
                 <div>
                     <div class="flex items-center justify-between mb-2.5">
                         <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
@@ -201,19 +221,30 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <path stroke-linecap="round" d="M5 16.5a10 10 0 0 1 14 0M8 19a6 6 0 0 1 8 0M11 21.5a2 2 0 0 1 2 0M3 13.5a14 14 0 0 1 18 0"/>
                             </svg>
                         </div>
-                        <span class="rounded-md bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700">SME</span>
+                        <?php if ($isDataActive): ?>
+                            <span class="rounded-md bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700">SME</span>
+                        <?php else: ?>
+                            <span class="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">Not Active</span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-700 leading-tight">Data Bundles</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 <?= $isDataActive ? 'group-hover:text-sky-700' : 'group-hover:text-amber-800' ?> leading-tight">Data Bundles</h3>
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">Cheap mobile data for all Nigerian networks.</p>
                 </div>
-                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-sky-700">
-                    <span>Open</span>
-                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isDataActive): ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-sky-700">
+                        <span>Open</span>
+                        <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-800">
+                        <span>Service Paused</span>
+                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
 
             <!-- 3. Airtime Top-up -->
-            <a href="airtime.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md active:scale-[0.98]">
+            <a href="airtime.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border <?= $isAirtimeActive ? 'border-slate-200/90 bg-white hover:border-amber-300 hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 active:scale-[0.98]">
                 <div>
                     <div class="flex items-center justify-between mb-2.5">
                         <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
@@ -221,19 +252,30 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                             </svg>
                         </div>
-                        <span class="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">VTU</span>
+                        <?php if ($isAirtimeActive): ?>
+                            <span class="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">VTU</span>
+                        <?php else: ?>
+                            <span class="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">Not Active</span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-amber-700 leading-tight">Airtime Top-up</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 <?= $isAirtimeActive ? 'group-hover:text-amber-700' : 'group-hover:text-amber-800' ?> leading-tight">Airtime Top-up</h3>
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">Instant recharge at discounted rates.</p>
                 </div>
-                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-700">
-                    <span>Open</span>
-                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isAirtimeActive): ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-700">
+                        <span>Open</span>
+                        <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-800">
+                        <span>Service Paused</span>
+                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
 
             <!-- 4. Electricity Bills -->
-            <a href="electricity.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md active:scale-[0.98]">
+            <a href="electricity.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border <?= $isElecActive ? 'border-slate-200/90 bg-white hover:border-orange-300 hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 active:scale-[0.98]">
                 <div>
                     <div class="flex items-center justify-between mb-2.5">
                         <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
@@ -241,19 +283,30 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
                         </div>
-                        <span class="rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-800">Tokens</span>
+                        <?php if ($isElecActive): ?>
+                            <span class="rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-800">Tokens</span>
+                        <?php else: ?>
+                            <span class="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">Not Active</span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-orange-700 leading-tight">Electricity Bills</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 <?= $isElecActive ? 'group-hover:text-orange-700' : 'group-hover:text-amber-800' ?> leading-tight">Electricity Bills</h3>
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">Prepaid meter tokens & postpaid bills.</p>
                 </div>
-                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-orange-700">
-                    <span>Open</span>
-                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isElecActive): ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-orange-700">
+                        <span>Open</span>
+                        <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-800">
+                        <span>Service Paused</span>
+                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
 
             <!-- 5. Cable TV -->
-            <a href="cable.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md active:scale-[0.98]">
+            <a href="cable.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border <?= $isCableActive ? 'border-slate-200/90 bg-white hover:border-indigo-300 hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 active:scale-[0.98]">
                 <div>
                     <div class="flex items-center justify-between mb-2.5">
                         <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-indigo-50 text-servora-600">
@@ -262,19 +315,30 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <polyline points="17 2 12 7 7 2"/>
                             </svg>
                         </div>
-                        <span class="rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-servora-800">DStv</span>
+                        <?php if ($isCableActive): ?>
+                            <span class="rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-servora-800">DStv</span>
+                        <?php else: ?>
+                            <span class="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">Not Active</span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-servora-700 leading-tight">Cable TV</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 <?= $isCableActive ? 'group-hover:text-servora-700' : 'group-hover:text-amber-800' ?> leading-tight">Cable TV</h3>
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">DStv, GOtv & StarTimes renewal.</p>
                 </div>
-                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-servora-700">
-                    <span>Open</span>
-                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isCableActive): ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-servora-700">
+                        <span>Open</span>
+                        <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-800">
+                        <span>Service Paused</span>
+                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
 
             <!-- 6. Bulk SMS -->
-            <a href="bulk_sms.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md active:scale-[0.98]">
+            <a href="bulk_sms.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border <?= $isSmsActive ? 'border-slate-200/90 bg-white hover:border-violet-300 hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 active:scale-[0.98]">
                 <div>
                     <div class="flex items-center justify-between mb-2.5">
                         <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
@@ -282,19 +346,30 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                             </svg>
                         </div>
-                        <span class="rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-800">SMS</span>
+                        <?php if ($isSmsActive): ?>
+                            <span class="rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-800">SMS</span>
+                        <?php else: ?>
+                            <span class="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">Not Active</span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-violet-700 leading-tight">Bulk SMS</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 <?= $isSmsActive ? 'group-hover:text-violet-700' : 'group-hover:text-amber-800' ?> leading-tight">Bulk SMS</h3>
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">Customized Sender ID messages.</p>
                 </div>
-                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-violet-700">
-                    <span>Open</span>
-                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isSmsActive): ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-violet-700">
+                        <span>Open</span>
+                        <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-800">
+                        <span>Service Paused</span>
+                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
 
             <!-- 7. Exam PINs -->
-            <a href="exam_pins.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-purple-300 hover:shadow-md active:scale-[0.98]">
+            <a href="exam_pins.php" class="group flex flex-col justify-between rounded-xl sm:rounded-2xl border <?= $isExamActive ? 'border-slate-200/90 bg-white hover:border-purple-300 hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-3.5 sm:p-4 shadow-xs transition hover:-translate-y-0.5 active:scale-[0.98]">
                 <div>
                     <div class="flex items-center justify-between mb-2.5">
                         <div class="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
@@ -303,15 +378,26 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
                             </svg>
                         </div>
-                        <span class="rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-800">WAEC</span>
+                        <?php if ($isExamActive): ?>
+                            <span class="rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-800">WAEC</span>
+                        <?php else: ?>
+                            <span class="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">Not Active</span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-purple-700 leading-tight">Exam PINs</h3>
+                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 <?= $isExamActive ? 'group-hover:text-purple-700' : 'group-hover:text-amber-800' ?> leading-tight">Exam PINs</h3>
                     <p class="mt-1 text-[11px] text-slate-400 hidden sm:block">WAEC, NECO & JAMB tokens.</p>
                 </div>
-                <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-purple-700">
-                    <span>Open</span>
-                    <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isExamActive): ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-purple-700">
+                        <span>Open</span>
+                        <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2.5 flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-800">
+                        <span>Service Paused</span>
+                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
 
             <!-- 8. Support Center -->
@@ -359,28 +445,74 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php else: ?>
             <div class="divide-y divide-slate-100">
                 <?php foreach ($recentTransactions as $tx):
-                    $isCredit = ($tx['type'] === 'credit' || $tx['type'] === 'refund');
+                    $txType = strtolower(trim((string)($tx['type'] ?? '')));
+                    $txStatus = strtolower(trim((string)($tx['status'] ?? '')));
+                    $isFailed = in_array($txStatus, ['failed', 'reversed', 'cancelled'], true);
+                    $isPending = ($txStatus === 'pending');
+                    $isCredit = in_array($txType, ['credit', 'refund', 'funding', 'deposit', 'wallet_funding', 'adjustment', 'bonus'], true);
+
+                    if ($isFailed) {
+                        $iconBoxClass = 'bg-rose-50 text-rose-600 border border-rose-200';
+                        $amtClass = 'text-rose-600 font-bold';
+                        $amtSign = '';
+                    } elseif ($isPending) {
+                        $iconBoxClass = 'bg-amber-50 text-amber-600 border border-amber-200';
+                        $amtClass = 'text-amber-600 font-bold';
+                        $amtSign = '~';
+                    } elseif ($isCredit) {
+                        $iconBoxClass = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+                        $amtClass = 'text-emerald-600 font-bold';
+                        $amtSign = '+';
+                    } else {
+                        $iconBoxClass = 'bg-rose-50 text-rose-600 border border-rose-100';
+                        $amtClass = 'text-rose-600 font-bold';
+                        $amtSign = '-';
+                    }
+
+                    $statusBadgeClass = match ($txStatus) {
+                        'successful' => 'text-emerald-700 bg-emerald-50 border border-emerald-200/60',
+                        'failed', 'reversed', 'cancelled' => 'text-rose-700 bg-rose-50 border border-rose-200/60',
+                        'pending' => 'text-amber-700 bg-amber-50 border border-amber-200/60',
+                        default => 'text-slate-600 bg-slate-100 border border-slate-200'
+                    };
                 ?>
                 <div class="flex items-center justify-between p-3 sm:p-3.5 transition hover:bg-slate-50/70">
                     <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                        <div class="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl <?= $isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600' ?>">
-                            <?php if ($isCredit): ?>
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                        <div class="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl <?= $iconBoxClass ?>">
+                            <?php if ($isFailed): ?>
+                            <!-- Failed Transaction Sign: X Mark -->
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            <?php elseif ($isPending): ?>
+                            <!-- Pending Transaction Sign: Clock -->
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>
+                            </svg>
+                            <?php elseif ($isCredit): ?>
+                            <!-- Green Arrow Down for Successful Deposit / Credit -->
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                            </svg>
                             <?php else: ?>
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                            <!-- Red Arrow Up for Debit / Service Payment -->
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                            </svg>
                             <?php endif; ?>
                         </div>
                         <div class="min-w-0">
-                            <p class="truncate text-xs font-semibold text-slate-900"><?= htmlspecialchars($tx['description'] ?? 'Wallet Activity') ?></p>
+                            <p class="truncate text-xs font-semibold text-slate-900"><?= htmlspecialchars($tx['description'] ?? ($isCredit ? 'Wallet Deposit' : 'Service Payment')) ?></p>
                             <span class="block truncate text-[10px] text-slate-400 font-mono"><?= date('M d, h:i A', strtotime($tx['created_at'])) ?></span>
                         </div>
                     </div>
                     <div class="text-right shrink-0 pl-2">
-                        <span class="font-mono text-xs font-bold <?= $isCredit ? 'text-emerald-600' : 'text-slate-900' ?>">
-                            <?= $isCredit ? '+' : '-' ?>₦<?= number_format((float)$tx['amount'], 2) ?>
+                        <span class="font-mono text-xs <?= $amtClass ?>">
+                            <?= $amtSign ?>₦<?= number_format((float)$tx['amount'], 2) ?>
                         </span>
-                        <span class="block text-[9px] capitalize font-bold <?= $tx['status'] === 'successful' ? 'text-emerald-500' : 'text-amber-500' ?>">
-                            <?= htmlspecialchars($tx['status']) ?>
+                        <span class="inline-block mt-0.5 rounded px-1.5 py-0.5 text-[9px] capitalize font-bold <?= $statusBadgeClass ?>">
+                            <?= htmlspecialchars(ucfirst($txStatus)) ?>
                         </span>
                     </div>
                 </div>

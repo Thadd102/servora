@@ -28,13 +28,14 @@ if ($action === 'validate_meter') {
 if ($action === 'validate_cable') {
     $cable = trim((string)($_GET['provider'] ?? ''));
     $iuc = trim((string)($_GET['iuc'] ?? ''));
+    $planId = isset($_GET['plan_id']) ? (int)$_GET['plan_id'] : (isset($_GET['package']) ? UtilityProvider::resolveCablePlanId((string)$_GET['package']) : null);
 
     if (empty($cable) || empty($iuc)) {
         echo json_encode(['ok' => false, 'message' => 'Please provide cable provider and IUC number.']);
         exit;
     }
 
-    $res = $provider->validateSmartCard($cable, $iuc);
+    $res = $provider->validateSmartCard($cable, $iuc, $planId);
     echo json_encode($res);
     exit;
 }

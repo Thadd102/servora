@@ -147,18 +147,15 @@ function processWalletFunding(
 
 
         /*
-         * Confirm that the Paystack customer email
-         * belongs to the user who owns the transaction.
+         * Confirm or log the customer email associated with payment
          */
         if (
-            strtolower(trim($user["email"])) !==
-            strtolower(trim($paidEmail))
+            !empty($paidEmail) &&
+            strtolower(trim($user["email"])) !== strtolower(trim($paidEmail))
         ) {
-
-            throw new Exception(
-                "Payment email does not match."
+            error_log(
+                "Wallet funding email variance notice: Transaction {$reference} for user #{$transaction['user_id']} ({$user['email']}) paid via {$paidEmail}."
             );
-
         }
 
 

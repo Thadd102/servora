@@ -2,6 +2,9 @@
 
 require_once "../config/database.php";
 require_once "../includes/client_auth.php";
+require_once "../includes/ServiceAvailability.php";
+
+$isDataActive = ServiceAvailability::isServiceActive($pdo, 'data');
 
 /*
 |--------------------------------------------------------------------------
@@ -145,7 +148,8 @@ $errorMessages = [
     "account"              => "Your account cannot make this purchase at the moment.",
     "wallet"               => "Your wallet could not be found.",
     "balance"              => "Your wallet balance is insufficient for this purchase.",
-    "processing"           => "We could not process the purchase. Please try again."
+    "processing"           => "We could not process the purchase. Please try again.",
+    "inactive"             => "Data subscription service is currently not active. Please check back later."
 ];
 
 $errorCode = $_GET["error"] ?? "";
@@ -300,6 +304,9 @@ $errorMessage = $errorMessages[$errorCode] ?? "";
 
     </section>
 
+    <?php if (!$isDataActive): ?>
+        <?php ServiceAvailability::renderInactiveNotice('Data Bundles'); ?>
+    <?php else: ?>
     <section
         class="mt-6 rounded-3xl border border-slate-200
                bg-white p-5 sm:p-7 shadow-sm"
@@ -587,6 +594,7 @@ $errorMessage = $errorMessages[$errorCode] ?? "";
         <?php endif; ?>
 
     </section>
+    <?php endif; ?>
 
 </main>
 

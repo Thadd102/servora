@@ -3,12 +3,17 @@ require_once "../config/database.php";
 require_once "../config/env.php";
 require_once "../includes/client_auth.php";
 require_once "../includes/DataProviderProcessor.php";
-require_once "../includes/VTPassDataClient.php";
 
 $userId = currentUserId();
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: buy_data.php");
+    exit;
+}
+
+require_once "../includes/ServiceAvailability.php";
+if (!ServiceAvailability::isServiceActive($pdo, 'data')) {
+    header("Location: buy_data.php?error=inactive");
     exit;
 }
 
@@ -149,7 +154,6 @@ try {
 
     $providerSlug = strtolower(trim((string) $precheckPlan["provider_slug"]));
     $cheapDataHub = null;
-    $vtpassClient = null;
 
     if ($providerSlug === "cheapdatahub") {
         $apiKey = $_ENV["CHEAPDATAHUB_API_KEY"] ?? getenv("CHEAPDATAHUB_API_KEY");
@@ -206,47 +210,6 @@ try {
             $supplierBalance < 0
         ) {
             error_log("CheapDataHub balance response could not be interpreted safely.");
-            header("Location: buy_data.php?error=provider_unavailable");
-            exit;
-        }
-
-        if ($supplierBalance < $precheckCostPrice) {
-            header("Location: buy_data.php?error=supplier_balance");
-            exit;
-        }
-    } elseif ($providerSlug === "vtpass") {
-        $vtpassApiKey = trim((string)(getenv('VTPASS_API_KEY') ?: ($_ENV['VTPASS_API_KEY'] ?? '')));
-        $vtpassSecretKey = trim((string)(getenv('VTPASS_SECRET_KEY') ?: ($_ENV['VTPASS_SECRET_KEY'] ?? '')));
-
-        if ($vtpassApiKey === '' || $vtpassSecretKey === '') {
-            error_log("VTPass credentials are not configured.");
-            header("Location: buy_data.php?error=provider_unavailable");
-            exit;
-        }
-
-        $vtpassClient = new VTPassDataClient();
-        $balanceResult = $vtpassClient->getBalance();
-
-        if (($balanceResult["ok"] ?? false) !== true) {
-            error_log("VTPass balance pre-check failed: " . ($balanceResult["message"] ?? ""));
-            header("Location: buy_data.php?error=provider_unavailable");
-            exit;
-        }
-
-        $payload = $balanceResult["data"] ?? [];
-        $supplierBalance = null;
-
-        $rawBal = $payload["contents"]["balance"] ?? ($payload["balance"] ?? null);
-        if ($rawBal !== null && is_numeric($rawBal)) {
-            $supplierBalance = (float)$rawBal;
-        }
-
-        if (
-            $supplierBalance === null ||
-            !is_finite($supplierBalance) ||
-            $supplierBalance < 0
-        ) {
-            error_log("VTPass balance response could not be interpreted safely.");
             header("Location: buy_data.php?error=provider_unavailable");
             exit;
         }
@@ -429,7 +392,7 @@ try {
 
     $orderProviderName = trim((string)($plan["provider_name"] ?? ""));
     if ($orderProviderName === "") {
-        $orderProviderName = ($providerSlug === "vtpass") ? "VTpass" : "CheapDataHub";
+        $orderProviderName = "CheapDataHub";
     }
 
     $stmt = $pdo->prepare("
@@ -511,8 +474,8 @@ try {
     try {
         $providerSlug = strtolower(trim((string) $plan["provider_slug"]));
 
-        if ($providerSlug === "cheapdatahub" || $providerSlug === "vtpass") {
-            $processor = new DataProviderProcessor($pdo, $cheapDataHub, $vtpassClient);
+        if ($providerSlug === "cheapdatahub") {
+            $processor = new DataProviderProcessor($pdo, $cheapDataHub);
             $providerResult = $processor->process($orderId);
 
             if (($providerResult["success"] ?? false) !== true) {

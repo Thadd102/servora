@@ -207,27 +207,54 @@ $isPaymentCancelled = ($paymentStatus === 'cancelled');
                 <?php foreach ($transactions as $transaction):
                     $type = $transaction["type"];
                     $typeLabel = ucwords(str_replace("_", " ", $type));
-                    $status = strtolower((string)$transaction["status"]);
+                    $status = strtolower(trim((string)$transaction["status"]));
 
-                    $isCredit = in_array($type, ['credit', 'refund', 'funding', 'adjustment'], true);
-                    $amountColor = $isCredit ? 'text-emerald-600' : 'text-slate-900';
+                    $typeLower = strtolower(trim((string)$type));
+                    $isFailed = in_array($status, ['failed', 'reversed', 'cancelled'], true);
+                    $isPending = ($status === 'pending');
+                    $isCredit = in_array($typeLower, ['credit', 'refund', 'funding', 'deposit', 'wallet_funding', 'adjustment', 'bonus'], true);
+
+                    if ($isFailed) {
+                        $iconClass = 'bg-rose-50 text-rose-600 border border-rose-200';
+                        $amountColor = 'text-rose-600';
+                        $amtSign = '';
+                    } elseif ($isPending) {
+                        $iconClass = 'bg-amber-50 text-amber-600 border border-amber-200';
+                        $amountColor = 'text-amber-600';
+                        $amtSign = '~';
+                    } elseif ($isCredit) {
+                        $iconClass = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+                        $amountColor = 'text-emerald-600';
+                        $amtSign = '+';
+                    } else {
+                        $iconClass = 'bg-rose-50 text-rose-600 border border-rose-100';
+                        $amountColor = 'text-rose-600';
+                        $amtSign = '-';
+                    }
 
                     $statusBadge = match ($status) {
-                        'successful' => 'text-emerald-700 bg-emerald-50',
-                        'failed' => 'text-red-700 bg-red-50',
-                        'reversed' => 'text-red-700 bg-red-50',
-                        'pending' => 'text-amber-700 bg-amber-50',
-                        default => 'text-slate-600 bg-slate-100'
+                        'successful' => 'text-emerald-700 bg-emerald-50 border border-emerald-200/60',
+                        'failed', 'reversed', 'cancelled' => 'text-rose-700 bg-rose-50 border border-rose-200/60',
+                        'pending' => 'text-amber-700 bg-amber-50 border border-amber-200/60',
+                        default => 'text-slate-600 bg-slate-100 border border-slate-200'
                     };
                 ?>
                 <div class="py-3.5 transition hover:bg-slate-50/70">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl <?= $isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600' ?>">
-                                <?php if ($isCredit): ?>
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl <?= $iconClass ?>">
+                                <?php if ($isFailed): ?>
+                                    <!-- Failed Transaction Sign: X Mark -->
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <?php elseif ($isPending): ?>
+                                    <!-- Pending Transaction Sign: Clock -->
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/></svg>
+                                <?php elseif ($isCredit): ?>
+                                    <!-- Green Arrow Down for Successful Deposit / Credit -->
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
                                 <?php else: ?>
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                    <!-- Red Arrow Up for Debit / Service Payment -->
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
                                 <?php endif; ?>
                             </div>
                             <div class="min-w-0">
@@ -242,7 +269,7 @@ $isPaymentCancelled = ($paymentStatus === 'cancelled');
 
                         <div class="text-right shrink-0">
                             <p class="font-mono text-xs font-black <?= $amountColor ?>">
-                                <?= $isCredit ? '+' : '-' ?>₦<?= number_format((float)$transaction["amount"], 2) ?>
+                                <?= $amtSign ?>₦<?= number_format((float)$transaction["amount"], 2) ?>
                             </p>
                             <span class="inline-block mt-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold <?= $statusBadge ?>">
                                 <?= htmlspecialchars(ucfirst($status)) ?>
@@ -284,27 +311,54 @@ $isPaymentCancelled = ($paymentStatus === 'cancelled');
                         <?php foreach ($transactions as $transaction):
                             $type = $transaction["type"];
                             $typeLabel = ucwords(str_replace("_", " ", $type));
-                            $status = strtolower((string)$transaction["status"]);
+                            $status = strtolower(trim((string)$transaction["status"]));
 
-                            $isCredit = in_array($type, ['credit', 'refund', 'funding', 'adjustment'], true);
-                            $amountColor = $isCredit ? 'text-emerald-600' : 'text-slate-900';
+                            $typeLower = strtolower(trim((string)$type));
+                            $isFailed = in_array($status, ['failed', 'reversed', 'cancelled'], true);
+                            $isPending = ($status === 'pending');
+                            $isCredit = in_array($typeLower, ['credit', 'refund', 'funding', 'deposit', 'wallet_funding', 'adjustment', 'bonus'], true);
+
+                            if ($isFailed) {
+                                $iconClass = 'bg-rose-50 text-rose-600 border border-rose-200';
+                                $amountColor = 'text-rose-600';
+                                $amtSign = '';
+                            } elseif ($isPending) {
+                                $iconClass = 'bg-amber-50 text-amber-600 border border-amber-200';
+                                $amountColor = 'text-amber-600';
+                                $amtSign = '~';
+                            } elseif ($isCredit) {
+                                $iconClass = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+                                $amountColor = 'text-emerald-600';
+                                $amtSign = '+';
+                            } else {
+                                $iconClass = 'bg-rose-50 text-rose-600 border border-rose-100';
+                                $amountColor = 'text-rose-600';
+                                $amtSign = '-';
+                            }
 
                             $statusBadge = match ($status) {
-                                'successful' => 'text-emerald-700 bg-emerald-50',
-                                'failed' => 'text-red-700 bg-red-50',
-                                'reversed' => 'text-red-700 bg-red-50',
-                                'pending' => 'text-amber-700 bg-amber-50',
-                                default => 'text-slate-600 bg-slate-100'
+                                'successful' => 'text-emerald-700 bg-emerald-50 border border-emerald-200/60',
+                                'failed', 'reversed', 'cancelled' => 'text-rose-700 bg-rose-50 border border-rose-200/60',
+                                'pending' => 'text-amber-700 bg-amber-50 border border-amber-200/60',
+                                default => 'text-slate-600 bg-slate-100 border border-slate-200'
                             };
                         ?>
                         <tr class="hover:bg-slate-50/70 transition">
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg <?= $isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600' ?>">
-                                        <?php if ($isCredit): ?>
-                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg <?= $iconClass ?>">
+                                        <?php if ($isFailed): ?>
+                                            <!-- Failed Transaction Sign: X Mark -->
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        <?php elseif ($isPending): ?>
+                                            <!-- Pending Transaction Sign: Clock -->
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/></svg>
+                                        <?php elseif ($isCredit): ?>
+                                            <!-- Green Arrow Down for Successful Deposit / Credit -->
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
                                         <?php else: ?>
-                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                            <!-- Red Arrow Up for Debit / Service Payment -->
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
                                         <?php endif; ?>
                                     </div>
                                     <div>
@@ -317,7 +371,7 @@ $isPaymentCancelled = ($paymentStatus === 'cancelled');
                                 <?= htmlspecialchars($transaction["reference"] ?? '—') ?>
                             </td>
                             <td class="px-5 py-3.5 text-right font-mono font-bold <?= $amountColor ?>">
-                                <?= $isCredit ? '+' : '-' ?>₦<?= number_format((float)$transaction["amount"], 2) ?>
+                                <?= $amtSign ?>₦<?= number_format((float)$transaction["amount"], 2) ?>
                             </td>
                             <td class="px-5 py-3.5 text-right font-mono text-slate-600">
                                 <?= isset($transaction["balance_after"]) && $transaction["balance_after"] !== null ? '₦' . number_format((float)$transaction["balance_after"], 2) : '—' ?>

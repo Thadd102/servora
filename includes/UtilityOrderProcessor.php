@@ -45,6 +45,16 @@ class UtilityOrderProcessor
             ];
         }
 
+        // 0. Service Availability Enforcement
+        require_once __DIR__ . "/ServiceAvailability.php";
+        if (!ServiceAvailability::isServiceActive($this->pdo, $serviceSlug, true)) {
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => 'This service is currently not active. Please check back later.'
+            ];
+        }
+
         // 1. Check idempotency token
         if (!empty($requestToken)) {
             $stmt = $this->pdo->prepare("SELECT id, order_reference, status, token_or_pin FROM utility_orders WHERE client_request_token = ? LIMIT 1");
@@ -87,8 +97,8 @@ class UtilityOrderProcessor
             $discountPct = (float)($product['percentage_markup'] ?? 2.0); // e.g., 2% discount from face value
             $providerCost = round($sellingPrice * (1 - ($discountPct / 100)), 2);
         } elseif ($serviceSlug === 'electricity') {
-            if ($customAmount === null || $customAmount < 500.0) {
-                return ['ok' => false, 'message' => 'Minimum electricity payment is ₦500.'];
+            if ($customAmount === null || $customAmount < 1000.0) {
+                return ['ok' => false, 'message' => 'Minimum electricity payment is ₦1,000.'];
             }
             $sellingPrice = $customAmount;
             $providerCost = $customAmount; // 0% provider markup on face value

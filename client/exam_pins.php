@@ -2,6 +2,9 @@
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../includes/client_auth.php";
 require_once __DIR__ . "/../includes/UtilityOrderProcessor.php";
+require_once __DIR__ . "/../includes/ServiceAvailability.php";
+
+$isExamActive = ServiceAvailability::isServiceActive($pdo, 'exam_pins');
 
 $userId = currentUserId();
 
@@ -36,6 +39,9 @@ $examProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!$isExamActive) {
+        $errorMessage = "Exam PIN purchase service is currently not active. Please check back later.";
+    } else
     $submittedCsrf = trim((string)($_POST["csrf_token"] ?? ""));
     if (!hash_equals($csrfToken, $submittedCsrf)) {
         $errorMessage = "Invalid security token. Please refresh the page.";
@@ -217,6 +223,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
     <?php endif; ?>
 
+    <?php if (!$isExamActive): ?>
+        <?php ServiceAvailability::renderInactiveNotice('Exam PINs'); ?>
+    <?php else: ?>
     <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
         <div>
             <p class="text-xs font-bold uppercase tracking-widest text-servora-600">Education Portal</p>
@@ -278,6 +287,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </button>
         </form>
     </section>
+    <?php endif; ?>
 </main>
 
 <script>

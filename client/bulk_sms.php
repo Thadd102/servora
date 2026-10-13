@@ -2,6 +2,9 @@
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../includes/client_auth.php";
 require_once __DIR__ . "/../includes/UtilityOrderProcessor.php";
+require_once __DIR__ . "/../includes/ServiceAvailability.php";
+
+$isSmsActive = ServiceAvailability::isServiceActive($pdo, 'bulk_sms');
 
 $userId = currentUserId();
 
@@ -32,6 +35,9 @@ $ratePerSms = $smsProduct ? (float)$smsProduct['selling_price'] : 3.50;
 
 // Handle submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!$isSmsActive) {
+        $errorMessage = "Bulk SMS service is currently not active. Please check back later.";
+    } else
     $submittedCsrf = trim((string)($_POST["csrf_token"] ?? ""));
     if (!hash_equals($csrfToken, $submittedCsrf)) {
         $errorMessage = "Invalid security token. Please refresh the page.";
@@ -225,6 +231,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
     <?php endif; ?>
 
+    <?php if (!$isSmsActive): ?>
+        <?php ServiceAvailability::renderInactiveNotice('Bulk SMS'); ?>
+    <?php else: ?>
     <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
         <div>
             <p class="text-xs font-bold uppercase tracking-widest text-servora-600">SMS Broadcast</p>
@@ -283,6 +292,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </button>
         </form>
     </section>
+    <?php endif; ?>
 </main>
 
 <script>

@@ -27,8 +27,8 @@ AddDefaultCharset UTF-8
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
-# Block sensitive configuration, dependency, database, documentation, and test files
-<FilesMatch "^(\.env.*|\.user\.ini|\.git.*|composer\.(json|lock)|package(-lock)?\.json|tailwind\.config\.js|.*\.sql|.*\.md|.*\.log|.*\.bak|.*\.backup|test_.*\.php|scratch_audit\.php|diagnose\.php)$">
+# Block sensitive configuration, dependency, database, documentation, archive, and test files
+<FilesMatch "^(\.env.*|\.user\.ini|\.git.*|composer\.(json|lock)|package(-lock)?\.json|tailwind\.config\.js|.*\.sql|.*\.md|.*\.log|.*\.bak|.*\.backup|.*\.zip|.*\.tar(\.gz)?|.*\.7z|.*\.rar|test_.*\.php|scratch_audit\.php|diagnose\.php)$">
     Require all denied
 </FilesMatch>
 

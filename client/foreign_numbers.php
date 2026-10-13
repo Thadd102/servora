@@ -4,6 +4,9 @@ require_once "../config/database.php";
 require_once "../includes/client_auth.php";
 require_once "../includes/VirtualNumberProvider.php";
 require_once "../includes/BrandAssetHelper.php";
+require_once "../includes/ServiceAvailability.php";
+
+$isFnActive = ServiceAvailability::isServiceActive($pdo, 'foreign_numbers');
 
 $userId = (int) ($_SESSION["user_id"] ?? 0);
 
@@ -176,6 +179,9 @@ function serviceIcon(string $serviceCode): string
     </section>
 
     <!-- CONTENT CARD -->
+    <?php if (!$isFnActive): ?>
+        <?php ServiceAvailability::renderInactiveNotice('Foreign Virtual Numbers'); ?>
+    <?php else: ?>
     <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
@@ -279,6 +285,7 @@ function serviceIcon(string $serviceCode): string
             </div>
         </div>
     </section>
+    <?php endif; ?>
 </main>
 
 <script>

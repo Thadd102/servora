@@ -196,14 +196,14 @@ $statsStmt = $pdo->query("
     SELECT
         COUNT(*) AS total_count,
         SUM(CASE WHEN provider_id = 1 THEN 1 ELSE 0 END) AS cdh_count,
-        SUM(CASE WHEN provider_id = 8 THEN 1 ELSE 0 END) AS vtpass_count,
+        SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS inactive_count,
         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_count
     FROM data_plans
 ");
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC) ?: [
     'total_count' => 0,
     'cdh_count' => 0,
-    'vtpass_count' => 0,
+    'inactive_count' => 0,
     'active_count' => 0
 ];
 
@@ -222,9 +222,7 @@ $searchQuery = trim($_GET["search"] ?? "");
 $where = ["1 = 1"];
 $params = [];
 
-if ($filterProvider === "vtpass") {
-    $where[] = "(dp.provider_id = 8 OR ap.slug = 'vtpass')";
-} elseif ($filterProvider === "cheapdatahub") {
+if ($filterProvider === "cheapdatahub") {
     $where[] = "(dp.provider_id = 1 OR ap.slug = 'cheapdatahub')";
 } elseif ($filterProvider === "none") {
     $where[] = "dp.provider_id IS NULL";
@@ -322,19 +320,19 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     Subnext Administration
                 </p>
                 <h1 class="mt-1 text-3xl font-black">
-                    Data Plans & Multi-Provider Pricing
+                    Data Plans & CheapDataHub Pricing
                 </h1>
                 <p class="mt-2 max-w-2xl text-sm text-white/75">
-                    Manage data bundles across independent providers (CheapDataHub & VTPass) with live markup and transparent profit control.
+                    Manage data bundles powered by CheapDataHub with live pricing sync, custom selling prices, and transparent profit margins.
                 </p>
             </div>
             <div class="flex flex-wrap sm:flex-col gap-2.5">
                 <a
-                    href="sync_vtpass_data.php"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-500/30 px-4 py-3 text-xs font-bold text-white ring-1 ring-inset ring-purple-300/40 hover:bg-purple-500/50 transition shadow-sm"
+                    href="sync_cheapdatahub_plans.php"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500/30 px-4 py-3 text-xs font-bold text-white ring-1 ring-inset ring-blue-300/40 hover:bg-blue-500/50 transition shadow-sm"
                 >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    Sync VTPass Data Bundles
+                    Sync CheapDataHub Plans
                 </a>
                 <a
                     href="data_orders.php"
@@ -352,15 +350,15 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p class="mt-0.5 text-xl font-bold"><?= (int)$stats['total_count'] ?></p>
             </div>
             <div>
-                <p class="text-xs text-blue-200">CheapDataHub Plans</p>
+                <p class="text-xs text-blue-200">CheapDataHub Active</p>
                 <p class="mt-0.5 text-xl font-bold text-blue-200"><?= (int)$stats['cdh_count'] ?></p>
             </div>
             <div>
-                <p class="text-xs text-purple-200">VTPass Plans</p>
-                <p class="mt-0.5 text-xl font-bold text-purple-200"><?= (int)$stats['vtpass_count'] ?></p>
+                <p class="text-xs text-slate-300">Archived Inactive</p>
+                <p class="mt-0.5 text-xl font-bold text-slate-300"><?= (int)$stats['inactive_count'] ?></p>
             </div>
             <div>
-                <p class="text-xs text-emerald-200">Active Plans</p>
+                <p class="text-xs text-emerald-200">Live Selling Plans</p>
                 <p class="mt-0.5 text-xl font-bold text-emerald-200"><?= (int)$stats['active_count'] ?></p>
             </div>
         </div>
@@ -490,7 +488,7 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <input
                     type="text"
                     name="provider_plan_code"
-                    placeholder="e.g. 77 (CheapDataHub) or mtn-100mb-1000 (VTPass)"
+                    placeholder="e.g. 77 (CheapDataHub bundle ID)"
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-servora-600"
                 >
             </div>
@@ -585,10 +583,10 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="flex items-center gap-2">
                     <a
-                        href="sync_vtpass_data.php"
-                        class="rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-700 hover:bg-purple-100 transition"
+                        href="sync_cheapdatahub_plans.php"
+                        class="rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition"
                     >
-                        Sync VTPass
+                        Sync CheapDataHub
                     </a>
                     <a
                         href="data_plans.php"
@@ -608,7 +606,6 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <select name="provider" onchange="this.form.submit()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold outline-none focus:border-servora-600">
                         <option value="">All Providers</option>
                         <option value="cheapdatahub" <?= $filterProvider === "cheapdatahub" ? "selected" : "" ?>>CheapDataHub</option>
-                        <option value="vtpass" <?= $filterProvider === "vtpass" ? "selected" : "" ?>>VTpass</option>
                         <option value="none" <?= $filterProvider === "none" ? "selected" : "" ?>>Unconnected</option>
                     </select>
                 </div>
@@ -698,8 +695,8 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             $profit = $selling - $cost;
                             $providerSlug = strtolower(trim((string)($plan["provider_slug"] ?? "")));
                             $providerId = (int)($plan["provider_id"] ?? 0);
-                            $isVtpass = ($providerSlug === 'vtpass' || $providerId === 8);
                             $isCdh = ($providerSlug === 'cheapdatahub' || $providerId === 1);
+                            $isArchived = ($plan["status"] === 'inactive');
                             ?>
                             <tr class="hover:bg-slate-50/80 transition-colors">
                                 <!-- NETWORK -->
@@ -741,19 +738,19 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                                 <!-- PROVIDER BADGE -->
                                 <td class="px-5 py-4 whitespace-nowrap">
-                                    <?php if ($isVtpass): ?>
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 border border-purple-200">
-                                            <span class="h-1.5 w-1.5 rounded-full bg-purple-600"></span>
-                                            VTpass
-                                        </span>
-                                    <?php elseif ($isCdh): ?>
+                                    <?php if ($isCdh): ?>
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-200">
                                             <span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span>
                                             CheapDataHub
                                         </span>
+                                    <?php elseif ($isArchived): ?>
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 border border-slate-200">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                                            Archived
+                                        </span>
                                     <?php else: ?>
                                         <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                                            <?= htmlspecialchars($plan["provider_name"] ?? "Not connected") ?>
+                                            <?= htmlspecialchars($plan["provider_name"] ?? "Custom") ?>
                                         </span>
                                     <?php endif; ?>
                                 </td>
@@ -833,20 +830,6 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
         costInput.addEventListener('input', updateFromProfit);
         profitInput.addEventListener('input', updateFromProfit);
         sellingInput.addEventListener('input', updateFromSelling);
-
-        // Pre-fill VTPass default profit if selected
-        if (providerSelect) {
-            providerSelect.addEventListener('change', function() {
-                const opt = providerSelect.options[providerSelect.selectedIndex];
-                const slug = opt.getAttribute('data-slug');
-                if (slug === 'vtpass' || providerSelect.value === '8') {
-                    if (!profitInput.value || parseFloat(profitInput.value) === 0) {
-                        profitInput.value = '50.00';
-                        updateFromProfit();
-                    }
-                }
-            });
-        }
     }
 </script>
 

@@ -79,91 +79,76 @@ When live API keys are left blank in `.env`, the system operates in **safe sandb
 ## 3. Airtime Top-Up (VTU)
 
 - **SERVICE**: Instant Airtime Recharge for Nigerian Telecom Networks
-- **PROVIDER**: CheapDataHub (Primary) / VTpass (Alternative)
-- **STATUS**: Integrated in `UtilityProvider.php` (Live CheapDataHub endpoint ready)
-- **OFFICIAL WEBSITE**: [https://www.cheapdatahub.ng/](https://www.cheapdatahub.ng/) / [https://www.vtpass.com/](https://www.vtpass.com/)
+- **PROVIDER**: CheapDataHub
+- **STATUS**: Integrated in `UtilityProvider.php` & `CheapDataHubClient.php`
+- **OFFICIAL WEBSITE**: [https://www.cheapdatahub.ng/](https://www.cheapdatahub.ng/)
 - **REGISTRATION URL**: [https://www.cheapdatahub.ng/register](https://www.cheapdatahub.ng/register)
-- **API DOCUMENTATION**: [https://www.cheapdatahub.ng/api-docs](https://www.cheapdatahub.ng/api-docs)
+- **API DOCUMENTATION**: [https://www.cheapdatahub.ng/api/docs/](https://www.cheapdatahub.ng/api/docs/)
 - **BASE URL**: `https://www.cheapdatahub.ng/api/v1/resellers`
 - **ENV VARIABLES**:
   ```text
-  AIRTIME_PROVIDER_API_KEY=
-  AIRTIME_PROVIDER_BASE_URL=https://www.cheapdatahub.ng/api/v1/resellers
+  CHEAPDATAHUB_API_KEY=
+  CHEAPDATAHUB_BASE_URL=https://www.cheapdatahub.ng/api/v1/resellers
   ```
 - **AUTHENTICATION**: Bearer Token (`Authorization: Bearer <API_KEY>`)
-- **SUPPORTED PRODUCTS**: MTN (ID: 1), Airtel (ID: 2), Glo (ID: 3), 9mobile (ID: 4)
+- **SUPPORTED PRODUCTS**: MTN (`provider_id`: 1), Glo (`provider_id`: 2), Airtel (`provider_id`: 3), 9mobile / T2 (`provider_id`: 4)
 - **IMPLEMENTED ENDPOINTS**:
   - Purchase Airtime: `POST /airtime/purchase/`
-    - Payload: `{"network_id": 1, "phone_number": "08012345678", "amount": 500}`
+    - Payload: `{"provider_id": 1, "phone_number": "08012345678", "amount": 500}`
 - **LIVE ACTIVATION STEPS**:
-  - Same as CheapDataHub. If `CHEAPDATAHUB_API_KEY` is set in `.env`, Airtime purchases automatically use your funded CheapDataHub wallet.
+  - Automatically active when `CHEAPDATAHUB_API_KEY` is set in `.env` and your CheapDataHub wallet is funded.
 
 ---
 
 ## 4. Electricity Bills & Prepaid Token Generation
 
 - **SERVICE**: NEPA / DisCo Electricity Bill Payment and Prepaid Token Dispensing
-- **PROVIDER**: VTpass
-- **STATUS**: Integrated in `UtilityProvider.php` (Sandbox simulation active when key is empty)
-- **OFFICIAL WEBSITE**: [https://www.vtpass.com/](https://www.vtpass.com/)
-- **REGISTRATION URL**: [https://www.vtpass.com/register](https://www.vtpass.com/register)
-- **API DOCUMENTATION**: [https://www.vtpass.com/api/documentation](https://www.vtpass.com/api/documentation)
-- **BASE URL**: `https://api-service.vtpass.com/api` (Live) / `https://sandbox.vtpass.com/api` (Testing)
-- **ENV VARIABLES**:
-  ```text
-  VTPASS_BASE_URL=https://api-service.vtpass.com/api
-  VTPASS_API_KEY=
-  VTPASS_PUBLIC_KEY=
-  VTPASS_SECRET_KEY=
-  ```
-- **AUTHENTICATION**: Basic HTTP Auth (`api-key: <KEY>`, `secret-key: <SECRET>`)
-- **SUPPORTED PRODUCTS**:
-  - Ikeja Electric (IKEDC - `ikeja-electric`)
-  - Eko Electricity (EKEDC - `eko-electric`)
-  - Abuja Electricity (AEDC - `abuja-electric`)
-  - Kano Electricity (KEDCO - `kano-electric`)
-  - Port Harcourt Electricity (PHED - `portharcourt-electric`)
-  - Ibadan Electricity (IBEDC - `ibadan-electric`)
-  - Kaduna Electric (KAEDCO - `kaduna-electric`)
-  - Jos Electricity (JED - `jos-electric`)
-  - Enugu Electricity (EEDC - `enugu-electric`)
-  - Benin Electricity (BEDC - `benin-electric`)
-  - Aba Power (APLE - `aba-electric`)
-  - Types: Prepaid (token generation) and Postpaid (bill settlement).
+- **PROVIDER**: CheapDataHub
+- **STATUS**: Integrated in `UtilityProvider.php` & `CheapDataHubClient.php`
+- **OFFICIAL WEBSITE**: [https://www.cheapdatahub.ng/](https://www.cheapdatahub.ng/)
+- **API DOCUMENTATION**: [https://www.cheapdatahub.ng/api/docs/](https://www.cheapdatahub.ng/api/docs/)
+- **BASE URL**: `https://www.cheapdatahub.ng/api/v1/resellers`
+- **ENV VARIABLES**: Shared with `CHEAPDATAHUB_API_KEY`
+- **AUTHENTICATION**: Bearer Token (`Authorization: Bearer <API_KEY>`)
+- **SUPPORTED DISCOS**:
+  - 1: Abuja Electricity (AEDC)
+  - 2: Eko Electricity (EKEDC)
+  - 3: Ibadan Electricity (IBEDC)
+  - 4: Ikeja Electric (IKEDC)
+  - 5: Kaduna Electric (KAEDCO)
+  - 6: Port Harcourt Electricity (PHED)
+  - 7: Jos Electricity Distribution PLC (JEDPLC)
+  - 8: Enugu Electricity (EEDC)
+  - 9: Yola Electricity (YEDC)
+  - 10: Benin Electricity (BEDC)
 - **IMPLEMENTED ENDPOINTS**:
-  - Verify Customer Meter: `POST /merchant-verify` (validates meter and returns customer name & address)
-  - Vend Token: `POST /pay` (dispatches purchase, returns 20-digit prepaid token, units, and receipt)
-- **LIVE ACTIVATION STEPS**:
-  1. Register on VTpass at `https://www.vtpass.com/register`.
-  2. Verify your email and complete KYC requirements.
-  3. In developer settings, generate API Key and Secret Key.
-  4. Top up your VTpass account balance.
-  5. Add credentials to `.env`.
+  - Verify Customer Meter: `POST /electricity/validate/`
+    - Payload: `{"disco_id": 4, "meter_type": "prepaid", "meter_number": "12345678901"}`
+  - Vend Token / Pay Bill: `POST /electricity/purchase/`
+    - Payload: `{"disco_id": 4, "meter_number": "12345678901", "amount": 2000, "meter_type": "prepaid", "phone": "08012345678"}`
+    - Returns token, units, and transaction receipt details.
 
 ---
 
 ## 5. Cable TV Subscriptions
 
-- **SERVICE**: DStv, GOtv, StarTimes & Showmax Bouquet Renewals
-- **PROVIDER**: VTpass
-- **STATUS**: Integrated in `UtilityProvider.php` (Sandbox simulation active when key is empty)
-- **OFFICIAL WEBSITE**: [https://www.vtpass.com/](https://www.vtpass.com/)
-- **REGISTRATION URL**: [https://www.vtpass.com/register](https://www.vtpass.com/register)
-- **API DOCUMENTATION**: [https://www.vtpass.com/api/documentation](https://www.vtpass.com/api/documentation)
-- **BASE URL**: `https://api-service.vtpass.com/api`
-- **ENV VARIABLES**: Shared with `VTPASS_API_KEY`
-- **AUTHENTICATION**: `api-key` & `secret-key` headers
-- **SUPPORTED PRODUCTS**:
-  - DStv (`dstv`): Padi, Yanga, Confam, Compact, Compact Plus, Premium
-  - GOtv (`gotv`): Smallie, Jinja, Jolli, Max, Supa, Supa Plus
-  - StarTimes (`startimes`): Nova, Basic, Smart, Classic, Super
-  - Showmax (`showmax`): Mobile, Standard, Pro
+- **SERVICE**: DStv, GOtv & StarTimes Bouquet Renewals and Activations
+- **PROVIDER**: CheapDataHub
+- **STATUS**: Integrated in `UtilityProvider.php` & `CheapDataHubClient.php`
+- **OFFICIAL WEBSITE**: [https://www.cheapdatahub.ng/](https://www.cheapdatahub.ng/)
+- **API DOCUMENTATION**: [https://www.cheapdatahub.ng/api/docs/](https://www.cheapdatahub.ng/api/docs/)
+- **BASE URL**: `https://www.cheapdatahub.ng/api/v1/resellers`
+- **ENV VARIABLES**: Shared with `CHEAPDATAHUB_API_KEY`
+- **AUTHENTICATION**: Bearer Token (`Authorization: Bearer <API_KEY>`)
+- **SUPPORTED PACKAGES**:
+  - DStv: Padi (3), Yanga (6), Confam (7), Compact (8), Compact Plus (9), Premium (10)
+  - GOtv: Smallie Monthly (4), Smallie Quarterly (11), Smallie Yearly (12), Jinja (13), Jolli (14), Max (15)
+  - StarTimes: Nova (5, 16, 17), Basic (18-21), Classic (22-23), Super (24-25), Smart (26)
 - **IMPLEMENTED ENDPOINTS**:
-  - Verify Smartcard / IUC: `POST /merchant-verify` (returns subscriber name, current active plan, renewal due date)
-  - Fetch Bouquets: `GET /service-variations?serviceID=dstv`
-  - Purchase Subscription: `POST /pay`
-- **LIVE ACTIVATION STEPS**:
-  - Automatically activated once `VTPASS_API_KEY` is added to `.env`.
+  - Verify Smartcard / IUC: `POST /cable/validate/`
+    - Payload: `{"plan_id": 3, "smart_card_number": "1234567890"}`
+  - Purchase Bouquet: `POST /cable/purchase/`
+    - Payload: `{"plan_id": 3, "cardnumber": "1234567890", "phone": "08012345678"}`
 
 ---
 
@@ -188,34 +173,27 @@ When live API keys are left blank in `.env`, the system operates in **safe sandb
   - Send SMS: `POST /api/sms/send`
     - Payload: `{"to": "2348012345678", "from": "Subnext", "sms": "Your message", "type": "plain", "channel": "generic", "api_key": "KEY"}`
   - Check Balance: `GET /api/get-balance?api_key=KEY`
-- **LIVE ACTIVATION STEPS**:
-  1. Register at `https://accounts.termii.com/register`.
-  2. Request a custom Sender ID (e.g. `Subnext`) under Sender ID management.
-  3. Fund your Termii wallet.
-  4. Copy your API Key and paste into `TERMII_API_KEY=` in `.env`.
 
 ---
 
 ## 7. Examination Result PINs & Scratch Cards
 
-- **SERVICE**: Instant Examination Result Checker PINs & Registration Tokens
-- **PROVIDER**: VTpass
-- **STATUS**: Integrated in `UtilityProvider.php`
-- **OFFICIAL WEBSITE**: [https://www.vtpass.com/](https://www.vtpass.com/)
-- **REGISTRATION URL**: [https://www.vtpass.com/register](https://www.vtpass.com/register)
-- **API DOCUMENTATION**: [https://www.vtpass.com/api/documentation](https://www.vtpass.com/api/documentation)
-- **BASE URL**: `https://api-service.vtpass.com/api`
-- **ENV VARIABLES**: Shared with `VTPASS_API_KEY`
+- **SERVICE**: Instant Examination Result Checker PINs
+- **PROVIDER**: CheapDataHub
+- **STATUS**: Integrated in `UtilityProvider.php` & `CheapDataHubClient.php`
+- **OFFICIAL WEBSITE**: [https://www.cheapdatahub.ng/](https://www.cheapdatahub.ng/)
+- **API DOCUMENTATION**: [https://www.cheapdatahub.ng/api/docs/](https://www.cheapdatahub.ng/api/docs/)
+- **BASE URL**: `https://www.cheapdatahub.ng/api/v1/resellers`
+- **ENV VARIABLES**: Shared with `CHEAPDATAHUB_API_KEY`
 - **SUPPORTED PRODUCTS**:
-  - WAEC Scratch Card / Result Checker (`waec`)
-  - NECO Result Token (`neco`)
-  - JAMB Direct Entry & UTME PINs (`jamb`)
-  - NABTEB Result Checker (`nabteb`)
+  - WAEC Result Checker PIN (`product_id`: 1)
+  - NECO Result Token (`product_id`: 2)
+  - NABTEB Result Checker (`product_id`: 3)
 - **IMPLEMENTED ENDPOINTS**:
-  - Vend PINs: `POST /pay` (serviceID: waec, amount, quantity, phone)
-  - Returns cards array containing `pin` and `serial` for instant display and receipt generation.
-- **LIVE ACTIVATION STEPS**:
-  - Automatically activated once `VTPASS_API_KEY` is added to `.env`.
+  - Fetch Products: `GET /exam-pin/products/`
+  - Purchase PINs: `POST /exam-pin/purchase/`
+    - Payload: `{"product_id": 1, "quantity": 1}`
+    - Returns generated PINs and Serial numbers for immediate client receipt.
 
 ---
 

@@ -2,6 +2,9 @@
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../includes/client_auth.php";
 require_once __DIR__ . "/../includes/UtilityOrderProcessor.php";
+require_once __DIR__ . "/../includes/ServiceAvailability.php";
+
+$isCableActive = ServiceAvailability::isServiceActive($pdo, 'cable_tv');
 
 $userId = currentUserId();
 
@@ -36,6 +39,9 @@ $cablePackages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!$isCableActive) {
+        $errorMessage = "Cable TV subscription service is currently not active. Please check back later.";
+    } else
     $submittedCsrf = trim((string)($_POST["csrf_token"] ?? ""));
     if (!hash_equals($csrfToken, $submittedCsrf)) {
         $errorMessage = "Invalid security token. Please refresh the page.";
@@ -211,6 +217,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
     <?php endif; ?>
 
+    <?php if (!$isCableActive): ?>
+        <?php ServiceAvailability::renderInactiveNotice('Cable TV'); ?>
+    <?php else: ?>
     <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
         <div>
             <p class="text-xs font-bold uppercase tracking-widest text-servora-600">TV Bouquet</p>
@@ -296,6 +305,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </button>
         </form>
     </section>
+    <?php endif; ?>
 </main>
 
 <script>
@@ -319,6 +329,8 @@ function filterPackages() {
 function verifySmartCard() {
     var provider = document.querySelector('input[name="cable_provider"]:checked').value;
     var iuc = document.getElementById('smart_card_number').value.trim();
+    var pkgSelect = document.getElementById('package_code');
+    var pkgCode = pkgSelect ? pkgSelect.value : '';
     var box = document.getElementById('cableVerificationBox');
 
     if (iuc.length < 6) return;
@@ -327,7 +339,7 @@ function verifySmartCard() {
     document.getElementById('cableCustomerName').innerText = 'Verifying IUC with provider...';
     document.getElementById('cableCurrentStatus').innerText = '';
 
-    fetch('api_validate.php?action=validate_cable&provider=' + encodeURIComponent(provider) + '&iuc=' + encodeURIComponent(iuc))
+    fetch('api_validate.php?action=validate_cable&provider=' + encodeURIComponent(provider) + '&iuc=' + encodeURIComponent(iuc) + '&package=' + encodeURIComponent(pkgCode))
         .then(function(res) { return res.json(); })
         .then(function(data) {
             if (data.ok) {
@@ -336,10 +348,13 @@ function verifySmartCard() {
                 document.getElementById('customer_name').value = data.customer_name;
             } else {
                 document.getElementById('cableCustomerName').innerHTML = '❌ ' + (data.message || 'Unable to verify smartcard');
+                document.getElementById('cableCurrentStatus').innerText = 'Please ensure the cable provider and Smartcard / IUC number are correct.';
+                document.getElementById('customer_name').value = '';
             }
         })
         .catch(function() {
-            document.getElementById('cableCustomerName').innerText = 'Verification timeout. You may still proceed.';
+            document.getElementById('cableCustomerName').innerText = 'Verification service error. Please check your connection and try again.';
+            document.getElementById('customer_name').value = '';
         });
 }
 

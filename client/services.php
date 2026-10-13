@@ -13,14 +13,11 @@ $stmt->execute([$userId]);
 $wallet = $stmt->fetch(PDO::FETCH_ASSOC);
 $walletBalance = $wallet ? (float)$wallet['balance'] : 0.00;
 
-// Fetch active services
-$stmt = $pdo->query("
-    SELECT id, name, slug, description, icon, route, status, sort_order
-    FROM services
-    WHERE status = 'active'
-    ORDER BY sort_order ASC
-");
-$services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch all services via ServiceAvailability
+require_once __DIR__ . "/../includes/ServiceAvailability.php";
+$services = array_values(ServiceAvailability::getAllServices($pdo));
+$activeCount = count(array_filter($services, fn($s) => $s['status'] === 'active'));
+$inactiveCount = count($services) - $activeCount;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -93,7 +90,7 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div>
                 <span class="rounded-xl bg-white/10 backdrop-blur border border-white/20 px-3.5 py-2 text-xs font-bold text-white">
-                    <?= count($services) ?> Active Services
+                    <?= $activeCount ?> Active Services<?= $inactiveCount > 0 ? " • " . $inactiveCount . " Paused" : "" ?>
                 </span>
             </div>
         </div>
@@ -137,22 +134,38 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 'exam_pins' => '🎓',
             ];
             $svcIcon = $icons[$s['slug']] ?? '⚡';
+            $isActive = ($s['status'] === 'active');
             ?>
-            <a href="<?= htmlspecialchars($s['route']) ?>" class="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-5 shadow-xs transition hover:-translate-y-0.5 hover:border-servora-300 hover:bg-white hover:shadow-md">
+            <a href="<?= htmlspecialchars($s['route']) ?>" class="group flex flex-col justify-between rounded-2xl border <?= $isActive ? 'border-slate-200 bg-slate-50/60 hover:-translate-y-0.5 hover:border-servora-300 hover:bg-white hover:shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-80 hover:border-amber-300' ?> p-5 shadow-xs transition">
                 <div>
                     <div class="flex items-center justify-between mb-3.5">
                         <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white border border-slate-200 text-xl shadow-xs">
                             <?= $svcIcon ?>
                         </div>
-                        <span class="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Active</span>
+                        <?php if ($isActive): ?>
+                            <span class="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1"></span>Active
+                            </span>
+                        <?php else: ?>
+                            <span class="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 mr-1"></span>Not Active
+                            </span>
+                        <?php endif; ?>
                     </div>
-                    <h3 class="text-base font-bold text-slate-900 group-hover:text-servora-700 transition"><?= htmlspecialchars($s['name']) ?></h3>
+                    <h3 class="text-base font-bold text-slate-900 <?= $isActive ? 'group-hover:text-servora-700' : 'group-hover:text-amber-800' ?> transition"><?= htmlspecialchars($s['name']) ?></h3>
                     <p class="mt-1 text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($s['description']) ?></p>
                 </div>
-                <div class="mt-5 flex items-center gap-1.5 text-xs font-bold text-servora-700">
-                    <span>Launch Service</span>
-                    <svg class="h-3.5 w-3.5 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </div>
+                <?php if ($isActive): ?>
+                    <div class="mt-5 flex items-center gap-1.5 text-xs font-bold text-servora-700">
+                        <span>Launch Service</span>
+                        <svg class="h-3.5 w-3.5 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-5 flex items-center gap-1.5 text-xs font-bold text-amber-800">
+                        <span>Temporarily Inactive</span>
+                        <svg class="h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                <?php endif; ?>
             </a>
             <?php endforeach; ?>
         </div>

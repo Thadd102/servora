@@ -219,15 +219,10 @@ function statusLabel(string $status): string
 function transactionTypeClass(string $type): string
 {
     return match ($type) {
-
-        "funding" => "bg-emerald-50 text-emerald-700 border-emerald-200",
-
-        "service_payment" => "bg-amber-50 text-amber-700 border-amber-200",
-
+        "funding", "credit", "deposit" => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        "debit", "service_payment" => "bg-rose-50 text-rose-700 border-rose-200",
         "refund" => "bg-indigo-50 text-indigo-700 border-indigo-200",
-
         "adjustment" => "bg-slate-100 text-slate-600 border-slate-200",
-
         default => "bg-slate-100 text-slate-600 border-slate-200"
     };
 }
@@ -236,19 +231,10 @@ function transactionTypeClass(string $type): string
 function transactionStatusClass(string $status): string
 {
     return match ($status) {
-
-        "successful" =>
-            "bg-emerald-50 text-emerald-700 border-emerald-200",
-
-        "pending" =>
-            "bg-amber-50 text-amber-700 border-amber-200",
-
-        "failed",
-        "reversed" =>
-            "bg-red-50 text-red-700 border-red-200",
-
-        default =>
-            "bg-slate-100 text-slate-600 border-slate-200"
+        "successful" => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        "pending" => "bg-amber-50 text-amber-700 border-amber-200",
+        "failed", "reversed" => "bg-rose-50 text-rose-700 border-rose-200",
+        default => "bg-slate-100 text-slate-600 border-slate-200"
     };
 }
 
@@ -256,17 +242,19 @@ function transactionStatusClass(string $status): string
 function transactionAmountClass(string $type): string
 {
     return match ($type) {
-
         "funding",
         "refund",
+        "credit",
+        "deposit",
         "adjustment" =>
             "text-emerald-600",
 
+        "debit",
         "service_payment" =>
-            "text-slate-800",
+            "text-rose-600",
 
         default =>
-            "text-slate-800"
+            "text-rose-600"
     };
 }
 
@@ -940,14 +928,22 @@ function transactionAmountClass(string $type): string
 
 
                                 <div class="text-right shrink-0">
-
-                                    <p class="text-base font-bold <?= transactionAmountClass($transaction["type"]) ?>">
-
-                                        ₦<?= number_format(
-                                            (float) $transaction["amount"],
-                                            2
-                                        ) ?>
-
+                                    <?php 
+                                        $txStatus = strtolower(trim((string)($transaction["status"] ?? "")));
+                                        $isFailed = in_array($txStatus, ["failed", "reversed", "cancelled"], true);
+                                        $isCredit = in_array(strtolower(trim((string)$transaction["type"])), ['funding', 'refund', 'credit', 'adjustment', 'deposit'], true); 
+                                    ?>
+                                    <p class="inline-flex items-center gap-1 text-base font-bold <?= $isFailed ? 'text-rose-600' : transactionAmountClass($transaction["type"]) ?>">
+                                        <?php if ($isFailed): ?>
+                                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            ₦<?= number_format((float) $transaction["amount"], 2) ?>
+                                        <?php elseif ($isCredit): ?>
+                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                            +₦<?= number_format((float) $transaction["amount"], 2) ?>
+                                        <?php else: ?>
+                                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                            -₦<?= number_format((float) $transaction["amount"], 2) ?>
+                                        <?php endif; ?>
                                     </p>
 
                                     <p class="text-xs text-slate-400 mt-1">
@@ -1203,14 +1199,22 @@ function transactionAmountClass(string $type): string
                                 <!-- Amount -->
 
                                 <td class="px-6 py-4">
-
-                                    <span class="text-sm font-bold <?= transactionAmountClass($transaction["type"]) ?>">
-
-                                        ₦<?= number_format(
-                                            (float) $transaction["amount"],
-                                            2
-                                        ) ?>
-
+                                    <?php 
+                                        $txStatus = strtolower(trim((string)($transaction["status"] ?? "")));
+                                        $isFailed = in_array($txStatus, ["failed", "reversed", "cancelled"], true);
+                                        $isCredit = in_array(strtolower(trim((string)$transaction["type"])), ['funding', 'refund', 'credit', 'adjustment', 'deposit'], true); 
+                                    ?>
+                                    <span class="inline-flex items-center gap-1 text-sm font-bold <?= $isFailed ? 'text-rose-600' : transactionAmountClass($transaction["type"]) ?>">
+                                        <?php if ($isFailed): ?>
+                                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            ₦<?= number_format((float) $transaction["amount"], 2) ?>
+                                        <?php elseif ($isCredit): ?>
+                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                            +₦<?= number_format((float) $transaction["amount"], 2) ?>
+                                        <?php else: ?>
+                                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                            -₦<?= number_format((float) $transaction["amount"], 2) ?>
+                                        <?php endif; ?>
                                     </span>
 
                                 </td>

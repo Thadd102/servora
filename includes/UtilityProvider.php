@@ -1,28 +1,27 @@
 <?php
 
+require_once __DIR__ . '/CheapDataHubClient.php';
+
 /**
  * UtilityProvider - Unified Provider Abstraction for Subnext VTU Services
  *
  * Covers:
- * 1. Airtime Top-Up (MTN, Airtel, Glo, 9mobile)
- * 2. Electricity Bills & Token Generation (IKEDC, EKEDC, AEDC, IBEDC, PHED, KEDCO, EEDC, BEDC, KAEDCO, JED, APLE)
- * 3. Cable TV Subscription (DStv, GOtv, StarTimes)
- * 4. Examination PINs (WAEC, NECO, JAMB, NABTEB)
- * 5. Bulk SMS (Targeted SMS Gateway)
+ * 1. Airtime Top-Up (MTN, Airtel, Glo, 9mobile) via CheapDataHub
+ * 2. Electricity Bills & Meter Validation (AEDC, EKEDC, IBEDC, IKEDC, KAEDCO, PHED, JEDPLC, EEDC, YEDC, BEDC) via CheapDataHub
+ * 3. Cable TV Subscription & Smartcard Validation (DStv, GOtv, StarTimes) via CheapDataHub
+ * 4. Examination PINs (WAEC, NECO, NABTEB) via CheapDataHub
+ * 5. Bulk SMS via Termii
  *
  * Adheres strictly to Subnext PRD:
  * - Real API integration behind stable provider interface
  * - Confidential credentials & supplier cost never leaked to client
- * - Sandbox / fallback simulation when live credentials are empty
+ * - Strict production-only live API execution. Simulated success responses prohibited.
  */
 class UtilityProvider
 {
+    private CheapDataHubClient $cheapDataHubClient;
     private string $cheapDataHubApiKey;
     private string $cheapDataHubBaseUrl;
-    private string $vtpassApiKey;
-    private string $vtpassPublicKey;
-    private string $vtpassSecretKey;
-    private string $vtpassBaseUrl;
     private string $termiiApiKey;
     private string $termiiBaseUrl;
     private string $termiiSenderId;
@@ -31,20 +30,20 @@ class UtilityProvider
     private string $smsApiKey;
     private string $smsBaseUrl;
 
-    public function __construct()
+    public function __construct(?string $cheapDataHubApiKey = null, ?string $cheapDataHubBaseUrl = null)
     {
         require_once __DIR__ . '/../config/env.php';
 
-        $this->cheapDataHubApiKey = trim((string)(getenv('CHEAPDATAHUB_API_KEY') ?: ($_ENV['CHEAPDATAHUB_API_KEY'] ?? '')));
-        $this->cheapDataHubBaseUrl = rtrim((string)(getenv('CHEAPDATAHUB_BASE_URL') ?: ($_ENV['CHEAPDATAHUB_BASE_URL'] ?? 'https://www.cheapdatahub.ng/api/v1/resellers')), '/');
+        $this->cheapDataHubApiKey = $cheapDataHubApiKey !== null
+            ? trim($cheapDataHubApiKey)
+            : trim((string)(getenv('CHEAPDATAHUB_API_KEY') ?: ($_ENV['CHEAPDATAHUB_API_KEY'] ?? '')));
+        $this->cheapDataHubBaseUrl = $cheapDataHubBaseUrl !== null
+            ? rtrim($cheapDataHubBaseUrl, '/')
+            : rtrim((string)(getenv('CHEAPDATAHUB_BASE_URL') ?: ($_ENV['CHEAPDATAHUB_BASE_URL'] ?? 'https://www.cheapdatahub.ng/api/v1/resellers')), '/');
 
-        // VTpass Live Credentials
-        $this->vtpassApiKey = trim((string)(getenv('VTPASS_API_KEY') ?: ($_ENV['VTPASS_API_KEY'] ?? '')));
-        $this->vtpassPublicKey = trim((string)(getenv('VTPASS_PUBLIC_KEY') ?: ($_ENV['VTPASS_PUBLIC_KEY'] ?? '')));
-        $this->vtpassSecretKey = trim((string)(getenv('VTPASS_SECRET_KEY') ?: ($_ENV['VTPASS_SECRET_KEY'] ?? '')));
-        $this->vtpassBaseUrl = rtrim((string)(getenv('VTPASS_BASE_URL') ?: ($_ENV['VTPASS_BASE_URL'] ?? 'https://api-service.vtpass.com/api')), '/');
+        $this->cheapDataHubClient = new CheapDataHubClient($this->cheapDataHubApiKey, $this->cheapDataHubBaseUrl);
 
-        // Termii Live Credentials
+        // Termii Live Credentials for Bulk SMS
         $this->termiiApiKey = trim((string)(getenv('TERMII_API_KEY') ?: ($_ENV['TERMII_API_KEY'] ?? '')));
         $this->termiiBaseUrl = rtrim((string)(getenv('TERMII_BASE_URL') ?: ($_ENV['TERMII_BASE_URL'] ?? 'https://api.ng.termii.com/api')), '/');
         $this->termiiSenderId = trim((string)(getenv('TERMII_SENDER_ID') ?: ($_ENV['TERMII_SENDER_ID'] ?? 'Subnext')));
@@ -86,7 +85,7 @@ class UtilityProvider
     }
 
     // =========================================================================
-    // AIRTIME TOP-UP
+    // AIRTIME TOP-UP (CheapDataHub)
     // =========================================================================
 
     public function purchaseAirtime(string $network, string $phoneNumber, float $amount, string $reference): array
@@ -113,64 +112,118 @@ class UtilityProvider
         }
         $networkId = $networkMap[$networkSlug] ?? ($detected ? ($networkMap[$detected] ?? 1) : 1);
 
-        // Live CheapDataHub call if configured
-        if (!empty($this->cheapDataHubApiKey)) {
-            $payload = [
-                'provider_id' => $networkId,
-                'phone_number' => $cleanPhone,
-                'amount' => (int)$amount
+        if (empty($this->cheapDataHubApiKey)) {
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => 'Airtime supplier gateway is not configured.'
             ];
-
-            $res = $this->httpPost($this->cheapDataHubBaseUrl . '/airtime/purchase/', $payload, [
-                "Authorization: Bearer " . $this->cheapDataHubApiKey,
-                "Accept: application/json",
-                "Content-Type: application/json"
-            ]);
-
-            if ($res['ok'] && is_array($res['data'])) {
-                $status = strtolower((string)($res['data']['status'] ?? ''));
-                $isSuccess = ($status === 'true' || $status === 'success' || $status === 'successful');
-                if ($isSuccess) {
-                    $orderId = (string)($res['data']['details']['ident'] ?? ($res['data']['details']['id'] ?? ($res['data']['transaction_id'] ?? ($res['data']['reference'] ?? $reference))));
-                    return [
-                        'ok' => true,
-                        'status' => 'successful',
-                        'provider_order_id' => $orderId,
-                        'message' => (string)($res['data']['message'] ?? 'Airtime delivered successfully.')
-                    ];
-                }
-                return [
-                    'ok' => false,
-                    'status' => 'failed',
-                    'message' => (string)($res['data']['message'] ?? 'Airtime top-up could not be completed by provider.')
-                ];
-            }
-
-            // If provider returned 4xx or 5xx error
-            if ($res['http_status'] >= 400) {
-                $errMsg = is_array($res['data']) ? ($res['data']['message'] ?? ($res['data']['detail'] ?? 'Provider rejected the airtime purchase.')) : 'Airtime gateway is temporarily unavailable. Please try again shortly.';
-                return [
-                    'ok' => false,
-                    'status' => 'failed',
-                    'message' => (string)$errMsg
-                ];
-            }
         }
 
-        // Seamless test mode
+        // Live CheapDataHub call
+        $res = $this->cheapDataHubClient->purchaseAirtime($networkId, $cleanPhone, (int)$amount);
+
+        if ($res['ok'] && is_array($res['data'])) {
+            $status = strtolower((string)($res['data']['status'] ?? ''));
+            $isSuccess = ($status === 'true' || $status === 'success' || $status === 'successful' || ($res['data']['status'] ?? false) === true);
+            if ($isSuccess) {
+                $orderId = (string)($res['data']['details']['ident'] ?? ($res['data']['details']['id'] ?? ($res['data']['transaction_id'] ?? ($res['data']['reference'] ?? $reference))));
+                return [
+                    'ok' => true,
+                    'status' => 'successful',
+                    'provider_order_id' => $orderId,
+                    'message' => (string)($res['data']['message'] ?? 'Airtime delivered successfully.')
+                ];
+            }
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => (string)($res['data']['message'] ?? 'Airtime top-up could not be completed by provider.')
+            ];
+        }
+
+        $errMsg = is_array($res['data'] ?? null)
+            ? (string)($res['data']['message'] ?? ($res['data']['detail'] ?? 'Provider rejected the airtime purchase.'))
+            : (string)($res['message'] ?? 'Airtime gateway is temporarily unavailable. Please try again shortly.');
+
         return [
-            'ok' => true,
-            'status' => 'successful',
-            'provider_order_id' => 'AIR-' . strtoupper(bin2hex(random_bytes(4))),
-            'message' => "Airtime of ₦" . number_format($amount, 2) . " credited to $cleanPhone successfully."
+            'ok' => false,
+            'status' => 'failed',
+            'message' => $errMsg
         ];
     }
 
     // =========================================================================
-    // ELECTRICITY (DISCOs & METER VALIDATION)
+    // ELECTRICITY (CheapDataHub Discos & Meter Validation)
     // =========================================================================
 
-    public function validateMeter(string $discoCode, string $meterNumber, string $meterType): array
+    /**
+     * Map disco code or product slug to CheapDataHub disco_id (1-10)
+     */
+    public static function resolveDiscoId(string $discoCode): int
+    {
+        $code = strtolower(trim($discoCode));
+        if (is_numeric($code) && (int)$code >= 1 && (int)$code <= 10) {
+            return (int)$code;
+        }
+
+        $discoMap = [
+            'abuja_electric' => 1,
+            'aedc' => 1,
+            'abuja' => 1,
+            'eko_electric' => 2,
+            'ekedc' => 2,
+            'eko' => 2,
+            'ibadan_electric' => 3,
+            'ibedc' => 3,
+            'ibadan' => 3,
+            'ikeja_electric' => 4,
+            'ikedc' => 4,
+            'ikeja' => 4,
+            'kaduna_electric' => 5,
+            'kaedco' => 5,
+            'kaduna' => 5,
+            'portharcourt_electric' => 6,
+            'phed' => 6,
+            'phedc' => 6,
+            'port_harcourt' => 6,
+            'jos_electric' => 7,
+            'jed' => 7,
+            'jedplc' => 7,
+            'jos' => 7,
+            'enugu_electric' => 8,
+            'eedc' => 8,
+            'enugu' => 8,
+            'yola_electric' => 9,
+            'yedc' => 9,
+            'yola' => 9,
+            'benin_electric' => 10,
+            'bedc' => 10,
+            'benin' => 10
+        ];
+
+        return $discoMap[$code] ?? 1;
+    }
+
+    public static function getDiscoName(int $discoId): string
+    {
+        $names = [
+            1 => 'Abuja Electricity (AEDC)',
+            2 => 'Eko Electricity (EKEDC)',
+            3 => 'Ibadan Electricity (IBEDC)',
+            4 => 'Ikeja Electric (IKEDC)',
+            5 => 'Kaduna Electric (KAEDCO)',
+            6 => 'Port Harcourt Electricity (PHED)',
+            7 => 'Jos Electricity Distribution PLC (JEDPLC)',
+            8 => 'Enugu Electricity (EEDC)',
+            9 => 'Yola Electricity (YEDC)',
+            10 => 'Benin Electricity (BEDC)'
+        ];
+
+        return $names[$discoId] ?? 'Electricity Distribution Company';
+    }
+
+    public function validateMeter(string $discoCode, string $meterNumber, string $meterType = 'prepaid'): array
     {
         $cleanMeter = trim($meterNumber);
         if (strlen($cleanMeter) < 6) {
@@ -180,71 +233,61 @@ class UtilityProvider
             ];
         }
 
-        $discoNames = [
-            'ikeja_electric' => 'Ikeja Electric (IKEDC)',
-            'eko_electric' => 'Eko Electricity (EKEDC)',
-            'abuja_electric' => 'Abuja Electricity (AEDC)',
-            'kano_electric' => 'Kano Electricity (KEDCO)',
-            'portharcourt_electric' => 'Port Harcourt Electricity (PHED)',
-            'ibadan_electric' => 'Ibadan Electricity (IBEDC)',
-            'kaduna_electric' => 'Kaduna Electric (KAEDCO)',
-            'jos_electric' => 'Jos Electricity (JED)',
-            'enugu_electric' => 'Enugu Electricity (EEDC)',
-            'benin_electric' => 'Benin Electricity (BEDC)',
-            'aba_electric' => 'Aba Power (APLE)'
-        ];
+        $discoId = self::resolveDiscoId($discoCode);
+        $discoName = self::getDiscoName($discoId);
+        $cleanType = strtolower(trim($meterType)) === 'postpaid' ? 'postpaid' : 'prepaid';
 
-        $discoName = $discoNames[$discoCode] ?? 'Electricity Distribution Company';
-
-        // Live VTpass verification if credentials configured
-        if (!empty($this->vtpassApiKey)) {
-            $vtpassServiceId = str_replace('_', '-', $discoCode);
-            $payload = [
-                'billersCode' => $cleanMeter,
-                'serviceID' => $vtpassServiceId,
-                'type' => strtolower($meterType)
+        if (empty($this->cheapDataHubApiKey)) {
+            return [
+                'ok' => false,
+                'message' => 'Electricity verification provider is not configured.'
             ];
+        }
 
-            $headers = [
-                "api-key: " . $this->vtpassApiKey,
-                "secret-key: " . $this->vtpassSecretKey,
-                "Content-Type: application/json",
-                "Accept: application/json"
-            ];
-            if (!empty($this->vtpassPublicKey)) {
-                $headers[] = "public-key: " . $this->vtpassPublicKey;
-            }
+        // Live CheapDataHub verification ONLY - NO MOCK / DEMO FALLBACK
+        $res = $this->cheapDataHubClient->validateMeter($discoId, $cleanMeter, $cleanType);
 
-            $res = $this->httpPost($this->vtpassBaseUrl . '/merchant-verify', $payload, $headers);
-            if ($res['ok'] && is_array($res['data'])) {
-                $content = $res['data']['content'] ?? [];
-                if (!empty($content['Customer_Name']) || !empty($content['customer_name'])) {
+        if ($res['ok'] && is_array($res['data'])) {
+            $status = $res['data']['status'] ?? false;
+            $isSuccess = ($status === true || $status === 1 || $status === '1' || strtolower((string)$status) === 'true' || strtolower((string)$status) === 'success' || strtolower((string)$status) === 'successful');
+
+            if ($isSuccess) {
+                $details = is_array($res['data']['details'] ?? null)
+                    ? $res['data']['details']
+                    : (is_array($res['data']['data'] ?? null) ? $res['data']['data'] : []);
+
+                $name = $details['name'] ?? ($details['customer_name'] ?? ($details['Customer_Name'] ?? ($res['data']['name'] ?? '')));
+                $address = $details['address'] ?? ($details['Address'] ?? ($details['meter_address'] ?? ($res['data']['address'] ?? '')));
+
+                if (!empty($name)) {
                     return [
                         'ok' => true,
-                        'customer_name' => $content['Customer_Name'] ?? $content['customer_name'],
+                        'customer_name' => trim((string)$name),
                         'meter_number' => $cleanMeter,
-                        'meter_type' => ucfirst($meterType),
-                        'address' => $content['Address'] ?? $content['address'] ?? ($content['Customer_Address'] ?? 'Verified Customer Address'),
+                        'meter_type' => ucfirst($cleanType),
+                        'address' => trim((string)$address) ?: 'Verified Customer Address',
                         'disco_name' => $discoName,
-                        'message' => 'Meter verified successfully.'
+                        'disco_id' => $discoId,
+                        'message' => (string)($res['data']['message'] ?? 'Meter verified successfully.')
                     ];
                 }
             }
+
+            $msg = (string)($res['data']['message'] ?? ($res['data']['detail'] ?? ($res['data']['error'] ?? 'Could not verify meter number with provider.')));
+            return [
+                'ok' => false,
+                'message' => $msg
+            ];
         }
 
-        // Mock verification fallback
-        $demoNames = ['ADEWALE JOHNSON', 'CHUKWUEMEKA OBI', 'IBRAHIM MUSA', 'BABATUNDE ADENIYI', 'FATIMA BELLO'];
-        $customerName = $demoNames[abs(crc32($cleanMeter)) % count($demoNames)];
-        $address = "Plot " . (abs(crc32($cleanMeter)) % 40 + 1) . ", " . ucfirst(str_replace('_electric', '', $discoCode)) . " District Area";
+        // Provider rejected or returned error (e.g. HTTP 400 invalid meter)
+        $msg = is_array($res['data'] ?? null)
+            ? (string)($res['data']['message'] ?? ($res['data']['detail'] ?? ($res['data']['error'] ?? 'Customer details could not be validated.')))
+            : (string)($res['message'] ?? 'Could not verify meter number. Please check and try again.');
 
         return [
-            'ok' => true,
-            'customer_name' => $customerName,
-            'meter_number' => $cleanMeter,
-            'meter_type' => ucfirst($meterType),
-            'address' => $address,
-            'disco_name' => $discoName,
-            'message' => 'Meter verified successfully.'
+            'ok' => false,
+            'message' => $msg
         ];
     }
 
@@ -256,73 +299,122 @@ class UtilityProvider
             $cleanPhone = '0' . substr($cleanPhone, 3);
         }
 
-        // Live VTpass call if credentials configured
-        if (!empty($this->vtpassApiKey)) {
-            $vtpassServiceId = str_replace('_', '-', $discoCode);
-            // Format requestId as YYYYMMDDHHII + reference
-            $requestId = date('YmdHi') . substr(preg_replace('/[^A-Za-z0-9]/', '', $reference), 0, 10);
-            
-            $payload = [
-                'request_id' => $requestId,
-                'serviceID' => $vtpassServiceId,
-                'billersCode' => $cleanMeter,
-                'variation_code' => strtolower($meterType),
-                'amount' => (int)$amount,
-                'phone' => $cleanPhone
-            ];
+        $discoId = self::resolveDiscoId($discoCode);
+        $cleanType = strtolower(trim($meterType)) === 'postpaid' ? 'postpaid' : 'prepaid';
 
-            $headers = [
-                "api-key: " . $this->vtpassApiKey,
-                "secret-key: " . $this->vtpassSecretKey,
-                "Content-Type: application/json",
-                "Accept: application/json"
+        if (empty($this->cheapDataHubApiKey)) {
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => 'Electricity supplier gateway is not configured.'
             ];
-            if (!empty($this->vtpassPublicKey)) {
-                $headers[] = "public-key: " . $this->vtpassPublicKey;
-            }
+        }
 
-            $res = $this->httpPost($this->vtpassBaseUrl . '/pay', $payload, $headers);
-            if ($res['ok'] && is_array($res['data'])) {
-                $code = (string)($res['data']['code'] ?? '');
-                if ($code === '000') {
-                    $token = (string)($res['data']['token'] ?? ($res['data']['mainToken'] ?? ''));
-                    $units = (string)($res['data']['units'] ?? number_format($amount / 68.0, 2) . ' kWh');
-                    return [
-                        'ok' => true,
-                        'status' => 'successful',
-                        'token' => $token,
-                        'units' => $units,
-                        'provider_order_id' => (string)($res['data']['content']['transactions']['transactionId'] ?? $requestId),
-                        'message' => 'Electricity payment successful. Token generated.'
-                    ];
+        // Live CheapDataHub call
+        $res = $this->cheapDataHubClient->purchaseElectricity($discoId, $cleanMeter, $cleanType, (float)$amount, $cleanPhone);
+
+        if ($res['ok'] && is_array($res['data'])) {
+            $status = $res['data']['status'] ?? false;
+            $isSuccess = ($status === true || $status === 1 || $status === '1' || strtolower((string)$status) === 'true' || strtolower((string)$status) === 'success' || strtolower((string)$status) === 'successful');
+            if ($isSuccess) {
+                $details = is_array($res['data']['details'] ?? null) ? $res['data']['details'] : ($res['data']['data'] ?? []);
+                $token = (string)($details['token'] ?? ($details['Token'] ?? ($details['token_code'] ?? ($res['data']['token'] ?? ''))));
+                $units = (string)($details['units'] ?? ($details['Units'] ?? ($details['unit'] ?? '')));
+                $orderId = (string)($details['ident'] ?? ($details['id'] ?? ($res['data']['transaction_id'] ?? $reference)));
+
+                if (empty($token) && $cleanType === 'prepaid') {
+                    $token = (string)($details['pin'] ?? ($details['meter_token'] ?? ''));
                 }
+
+                return [
+                    'ok' => true,
+                    'status' => 'successful',
+                    'token' => $token ?: 'Token dispatched via SMS',
+                    'units' => $units ?: 'Standard kWh',
+                    'provider_order_id' => $orderId,
+                    'message' => (string)($res['data']['message'] ?? 'Electricity payment completed successfully.')
+                ];
             }
+
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => (string)($res['data']['message'] ?? 'Electricity recharge was rejected by provider.')
+            ];
         }
 
-        // Generate realistic 20-digit token (formatted 4-4-4-4-4)
-        $digits = '';
-        for ($i = 0; $i < 20; $i++) {
-            $digits .= mt_rand(0, 9);
-        }
-        $formattedToken = chunk_split($digits, 4, '-');
-        $formattedToken = rtrim($formattedToken, '-');
-        $units = number_format($amount / 68.0, 2) . ' kWh';
+        $errMsg = is_array($res['data'] ?? null)
+            ? (string)($res['data']['message'] ?? ($res['data']['detail'] ?? 'Provider electricity gateway error.'))
+            : (string)($res['message'] ?? 'Electricity gateway is temporarily unavailable.');
 
         return [
-            'ok' => true,
-            'status' => 'successful',
-            'token' => $formattedToken,
-            'units' => $units,
-            'provider_order_id' => 'ELEC-' . strtoupper(bin2hex(random_bytes(4))),
-            'message' => 'Electricity payment successful. Token generated.'
+            'ok' => false,
+            'status' => 'failed',
+            'message' => $errMsg
         ];
     }
 
     // =========================================================================
-    // CABLE TV (DStv, GOtv, StarTimes)
+    // CABLE TV (CheapDataHub DStv, GOtv, StarTimes)
     // =========================================================================
 
-    public function validateSmartCard(string $cableProvider, string $smartCardNumber): array
+    /**
+     * Map package code or provider string to CheapDataHub cable plan_id
+     */
+    public static function resolveCablePlanId(string $packageOrProvider): int
+    {
+        $code = strtolower(trim($packageOrProvider));
+        if (is_numeric($code) && (int)$code > 0) {
+            return (int)$code;
+        }
+
+        $planMap = [
+            // DStv
+            'dstv' => 3, // Default DStv
+            'dstv_padi' => 3,
+            'dstv_yanga' => 6,
+            'dstv_confam' => 7,
+            'dstv_compact' => 8,
+            'dstv_compact_plus' => 9,
+            'dstv_premium' => 10,
+            // GOtv
+            'gotv' => 4, // Default GOtv
+            'gotv_smallie_monthly' => 4,
+            'gotv_smallie_quarterly' => 11,
+            'gotv_smallie_yearly' => 12,
+            'gotv_jinja' => 13,
+            'gotv_jolli' => 14,
+            'gotv_max' => 15,
+            'gotv_supa' => 15,
+            // StarTimes
+            'startimes' => 20, // Default StarTimes
+            'startimes_nova_1_month' => 5,
+            'startimes_nova_1_day' => 16,
+            'startimes_nova_1_week' => 17,
+            'basic_antenna_1_week' => 18,
+            'startimes_basic_antenna_1_week' => 18,
+            'basic_dish_1_week' => 19,
+            'startimes_basic_dish_1_week' => 19,
+            'basic_antenna_1_month' => 20,
+            'startimes_basic_antenna_1_month' => 20,
+            'basic_dish_1month' => 21,
+            'startimes_basic_dish_1month' => 21,
+            'classic_dish_1_week' => 22,
+            'startimes_classic_dish_1_week' => 22,
+            'classic_dish_1_month' => 23,
+            'startimes_classic_dish_1_month' => 23,
+            'super_antenna_1_month' => 24,
+            'startimes_super_antenna_1_month' => 24,
+            'super_dish_1_month' => 25,
+            'startimes_super_dish_1_month' => 25,
+            'smart_dish_1_month' => 26,
+            'startimes_smart_dish_1_month' => 26
+        ];
+
+        return $planMap[$code] ?? 3;
+    }
+
+    public function validateSmartCard(string $cableProvider, string $smartCardNumber, ?int $planId = null): array
     {
         $cleanIuc = trim($smartCardNumber);
         if (strlen($cleanIuc) < 6) {
@@ -332,196 +424,202 @@ class UtilityProvider
             ];
         }
 
-        // Live VTpass call if credentials configured
-        if (!empty($this->vtpassApiKey)) {
-            $vtpassServiceId = strtolower($cableProvider);
-            $payload = [
-                'billersCode' => $cleanIuc,
-                'serviceID' => $vtpassServiceId
-            ];
+        $resolvedPlanId = ($planId !== null && $planId > 0) ? $planId : self::resolveCablePlanId($cableProvider);
 
-            $headers = [
-                "api-key: " . $this->vtpassApiKey,
-                "secret-key: " . $this->vtpassSecretKey,
-                "Content-Type: application/json",
-                "Accept: application/json"
+        if (empty($this->cheapDataHubApiKey)) {
+            return [
+                'ok' => false,
+                'message' => 'Cable TV verification provider is not configured.'
             ];
-            if (!empty($this->vtpassPublicKey)) {
-                $headers[] = "public-key: " . $this->vtpassPublicKey;
-            }
+        }
 
-            $res = $this->httpPost($this->vtpassBaseUrl . '/merchant-verify', $payload, $headers);
-            if ($res['ok'] && is_array($res['data'])) {
-                $content = $res['data']['content'] ?? [];
-                if (!empty($content['Customer_Name']) || !empty($content['customer_name'])) {
+        // Live CheapDataHub verification ONLY - NO MOCK / DEMO FALLBACK
+        $res = $this->cheapDataHubClient->validateCable($resolvedPlanId, $cleanIuc);
+
+        if ($res['ok'] && is_array($res['data'])) {
+            $status = $res['data']['status'] ?? false;
+            $isSuccess = ($status === true || $status === 1 || $status === '1' || strtolower((string)$status) === 'true' || strtolower((string)$status) === 'success' || strtolower((string)$status) === 'successful');
+            if ($isSuccess) {
+                $details = is_array($res['data']['details'] ?? null) ? $res['data']['details'] : ($res['data']['data'] ?? []);
+                $name = $details['name'] ?? ($details['customer_name'] ?? ($details['Customer_Name'] ?? ($res['data']['name'] ?? '')));
+                $planName = $details['current_plan'] ?? ($details['package'] ?? (strtoupper($cableProvider) . ' Active Bouquet'));
+                $dueDate = $details['due_date'] ?? '';
+
+                if (!empty($name)) {
                     return [
                         'ok' => true,
-                        'customer_name' => $content['Customer_Name'] ?? $content['customer_name'],
+                        'customer_name' => trim((string)$name),
                         'smart_card_number' => $cleanIuc,
-                        'current_plan' => $content['Current_Bouquet'] ?? (strtoupper($cableProvider) . ' Active Bouquet'),
-                        'due_date' => $content['Due_Date'] ?? date('Y-m-d', strtotime('+30 days')),
-                        'message' => 'Smartcard / IUC verified successfully.'
+                        'current_plan' => (string)$planName,
+                        'due_date' => (string)$dueDate,
+                        'message' => (string)($res['data']['message'] ?? 'Smartcard / IUC verified successfully.')
                     ];
                 }
             }
+
+            $msg = (string)($res['data']['message'] ?? ($res['data']['detail'] ?? ($res['data']['error'] ?? 'Could not verify smartcard number with provider.')));
+            return [
+                'ok' => false,
+                'message' => $msg
+            ];
         }
 
-        $names = ['OLUWASEUN ADEKUNLE', 'EMMANUEL NWOSU', 'USMAN DANJUMA', 'BLESSING EZE', 'KELECHI OKONKWO'];
-        $customerName = $names[abs(crc32($cleanIuc)) % count($names)];
-        $dueDate = date('Y-m-d', strtotime('+30 days'));
+        $msg = is_array($res['data'] ?? null)
+            ? (string)($res['data']['message'] ?? ($res['data']['detail'] ?? ($res['data']['error'] ?? 'Smartcard validation could not be completed.')))
+            : (string)($res['message'] ?? 'Could not verify smartcard number. Please check and try again.');
 
         return [
-            'ok' => true,
-            'customer_name' => $customerName,
-            'smart_card_number' => $cleanIuc,
-            'current_plan' => strtoupper($cableProvider) . ' Active Bouquet',
-            'due_date' => $dueDate,
-            'message' => 'Smartcard / IUC verified successfully.'
+            'ok' => false,
+            'message' => $msg
         ];
     }
 
-    public function purchaseCable(string $cableProvider, string $packageCode, string $smartCardNumber, string $customerPhone, string $reference): array
+    public function purchaseCable(string $cableProvider, string $packageCode, string $smartCardNumber, string $customerPhone, string $reference, ?int $planId = null): array
     {
-        // Live VTpass call if credentials configured
-        if (!empty($this->vtpassApiKey)) {
-            $vtpassServiceId = strtolower($cableProvider);
-            $requestId = date('YmdHi') . substr(preg_replace('/[^A-Za-z0-9]/', '', $reference), 0, 10);
-            $cleanPhone = preg_replace('/\D+/', '', $customerPhone);
-
-            $payload = [
-                'request_id' => $requestId,
-                'serviceID' => $vtpassServiceId,
-                'billersCode' => trim($smartCardNumber),
-                'variation_code' => $packageCode,
-                'phone' => $cleanPhone
-            ];
-
-            $headers = [
-                "api-key: " . $this->vtpassApiKey,
-                "secret-key: " . $this->vtpassSecretKey,
-                "Content-Type: application/json",
-                "Accept: application/json"
-            ];
-            if (!empty($this->vtpassPublicKey)) {
-                $headers[] = "public-key: " . $this->vtpassPublicKey;
-            }
-
-            $res = $this->httpPost($this->vtpassBaseUrl . '/pay', $payload, $headers);
-            if ($res['ok'] && is_array($res['data'])) {
-                $code = (string)($res['data']['code'] ?? '');
-                if ($code === '000') {
-                    return [
-                        'ok' => true,
-                        'status' => 'successful',
-                        'provider_order_id' => (string)($res['data']['content']['transactions']['transactionId'] ?? $requestId),
-                        'message' => 'Cable TV subscription activated successfully.'
-                    ];
-                }
-            }
+        $cleanCard = trim($smartCardNumber);
+        $cleanPhone = preg_replace('/\D+/', '', $customerPhone);
+        if (str_starts_with($cleanPhone, '234')) {
+            $cleanPhone = '0' . substr($cleanPhone, 3);
         }
 
+        $resolvedPlanId = ($planId !== null && $planId > 0) ? $planId : self::resolveCablePlanId($packageCode ?: $cableProvider);
+
+        if (empty($this->cheapDataHubApiKey)) {
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => 'Cable TV supplier gateway is not configured.'
+            ];
+        }
+
+        // Live CheapDataHub call
+        $res = $this->cheapDataHubClient->purchaseCable($resolvedPlanId, $cleanCard, $cleanPhone);
+
+        if ($res['ok'] && is_array($res['data'])) {
+            $status = $res['data']['status'] ?? false;
+            $isSuccess = ($status === true || $status === 1 || $status === '1' || strtolower((string)$status) === 'true' || strtolower((string)$status) === 'success' || strtolower((string)$status) === 'successful');
+            if ($isSuccess) {
+                $details = is_array($res['data']['details'] ?? null) ? $res['data']['details'] : ($res['data']['data'] ?? []);
+                $orderId = (string)($details['ident'] ?? ($details['id'] ?? ($res['data']['transaction_id'] ?? $reference)));
+
+                return [
+                    'ok' => true,
+                    'status' => 'successful',
+                    'provider_order_id' => $orderId,
+                    'message' => (string)($res['data']['message'] ?? 'Cable TV subscription activated successfully.')
+                ];
+            }
+
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => (string)($res['data']['message'] ?? 'Cable TV subscription could not be activated.')
+            ];
+        }
+
+        $errMsg = is_array($res['data'] ?? null)
+            ? (string)($res['data']['message'] ?? ($res['data']['detail'] ?? 'Provider cable TV gateway error.'))
+            : (string)($res['message'] ?? 'Cable TV gateway is temporarily unavailable.');
+
         return [
-            'ok' => true,
-            'status' => 'successful',
-            'provider_order_id' => 'CABLE-' . strtoupper(bin2hex(random_bytes(4))),
-            'message' => 'Cable TV subscription activated successfully.'
+            'ok' => false,
+            'status' => 'failed',
+            'message' => $errMsg
         ];
     }
 
     // =========================================================================
-    // EXAM PINs (WAEC, NECO, JAMB, NABTEB)
+    // EXAM PINs (CheapDataHub: WAEC, NECO, NABTEB)
     // =========================================================================
+
+    public static function resolveExamProductId(string $examCode): int
+    {
+        $code = strtolower(trim($examCode));
+        if (is_numeric($code) && (int)$code > 0) {
+            return (int)$code;
+        }
+
+        $examMap = [
+            'waec' => 1,
+            'waec_registration' => 1,
+            'neco' => 2,
+            'nabteb' => 3
+        ];
+
+        return $examMap[$code] ?? 1;
+    }
 
     public function purchaseExamPin(string $examCode, int $quantity, string $customerPhone, string $reference): array
     {
         $quantity = max(1, min(10, $quantity));
-        $examCodeUpper = strtoupper($examCode);
+        $productId = self::resolveExamProductId($examCode);
 
-        // Live VTpass call if credentials configured
-        if (!empty($this->vtpassApiKey)) {
-            $vtpassServiceMap = [
-                'waec' => 'waec',
-                'waec_registration' => 'waec-registration',
-                'neco' => 'neco',
-                'jamb' => 'jamb',
-                'nabteb' => 'nabteb'
+        if (empty($this->cheapDataHubApiKey)) {
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => 'Exam PIN supplier gateway is not configured.'
             ];
-            $serviceId = $vtpassServiceMap[strtolower($examCode)] ?? 'waec';
-            $requestId = date('YmdHi') . substr(preg_replace('/[^A-Za-z0-9]/', '', $reference), 0, 10);
-            $cleanPhone = preg_replace('/\D+/', '', $customerPhone);
+        }
 
-            $payload = [
-                'request_id' => $requestId,
-                'serviceID' => $serviceId,
-                'variation_code' => $serviceId,
-                'phone' => $cleanPhone,
-                'quantity' => $quantity
-            ];
+        // Live CheapDataHub call
+        $res = $this->cheapDataHubClient->purchaseExamPin($productId, in_array($quantity, [1, 2, 5], true) ? $quantity : 1);
 
-            $headers = [
-                "api-key: " . $this->vtpassApiKey,
-                "secret-key: " . $this->vtpassSecretKey,
-                "Content-Type: application/json",
-                "Accept: application/json"
-            ];
-            if (!empty($this->vtpassPublicKey)) {
-                $headers[] = "public-key: " . $this->vtpassPublicKey;
-            }
+        if ($res['ok'] && is_array($res['data'])) {
+            $status = $res['data']['status'] ?? false;
+            $isSuccess = ($status === true || $status === 1 || $status === '1' || strtolower((string)$status) === 'true' || strtolower((string)$status) === 'success' || strtolower((string)$status) === 'successful');
+            if ($isSuccess) {
+                $details = is_array($res['data']['details'] ?? null) ? $res['data']['details'] : ($res['data']['data'] ?? []);
+                $tokens = (array)($details['pins'] ?? ($details['tokens'] ?? ($details['cards'] ?? [])));
+                $tokenParts = [];
+                $pins = [];
 
-            $res = $this->httpPost($this->vtpassBaseUrl . '/pay', $payload, $headers);
-            if ($res['ok'] && is_array($res['data'])) {
-                $code = (string)($res['data']['code'] ?? '');
-                if ($code === '000') {
-                    $tokens = (array)($res['data']['tokens'] ?? ($res['data']['cards'] ?? []));
-                    $tokenParts = [];
-                    $pins = [];
-                    foreach ($tokens as $idx => $t) {
-                        $p = is_array($t) ? ($t['Pin'] ?? $t['pin'] ?? '') : (string)$t;
-                        $s = is_array($t) ? ($t['Serial'] ?? $t['serial'] ?? '') : '';
-                        $pins[] = ['pin' => $p, 'serial' => $s];
-                        $tokenParts[] = "PIN #" . ($idx + 1) . ": $p" . ($s ? " | Serial: $s" : '');
-                    }
-                    $tokenDisplay = !empty($tokenParts) ? implode("\n", $tokenParts) : (string)($res['data']['token'] ?? 'PIN generated');
-
-                    return [
-                        'ok' => true,
-                        'status' => 'successful',
-                        'pins' => $pins,
-                        'token_or_pin' => $tokenDisplay,
-                        'provider_order_id' => (string)($res['data']['content']['transactions']['transactionId'] ?? $requestId),
-                        'message' => "Successfully generated $quantity " . strtoupper(str_replace('_', ' ', $examCode)) . " PIN(s)."
-                    ];
+                foreach ($tokens as $idx => $t) {
+                    $p = is_array($t) ? ($t['pin'] ?? ($t['Pin'] ?? '')) : (string)$t;
+                    $s = is_array($t) ? ($t['serial'] ?? ($t['Serial'] ?? '')) : '';
+                    $pins[] = ['pin' => $p, 'serial' => $s];
+                    $tokenParts[] = "PIN #" . ($idx + 1) . ": $p" . ($s ? " | Serial: $s" : '');
                 }
+
+                $singlePin = (string)($details['pin'] ?? ($details['token'] ?? ''));
+                if (empty($tokenParts) && !empty($singlePin)) {
+                    $pins[] = ['pin' => $singlePin, 'serial' => (string)($details['serial'] ?? '')];
+                    $tokenParts[] = "PIN #1: $singlePin" . (!empty($details['serial']) ? " | Serial: {$details['serial']}" : '');
+                }
+
+                $tokenDisplay = !empty($tokenParts) ? implode("\n", $tokenParts) : (string)($res['data']['message'] ?? 'PIN generated');
+                $orderId = (string)($details['ident'] ?? ($details['id'] ?? ($res['data']['transaction_id'] ?? $reference)));
+
+                return [
+                    'ok' => true,
+                    'status' => 'successful',
+                    'pins' => $pins,
+                    'token_or_pin' => $tokenDisplay,
+                    'provider_order_id' => $orderId,
+                    'message' => "Successfully generated " . strtoupper(str_replace('_', ' ', $examCode)) . " PIN(s)."
+                ];
             }
-        }
 
-        $pins = [];
-        $tokenParts = [];
-
-        for ($i = 1; $i <= $quantity; $i++) {
-            $pin = mt_rand(1000, 9999) . mt_rand(1000, 9999) . mt_rand(1000, 9999);
-            $serial = strtoupper($examCodeUpper . '-' . bin2hex(random_bytes(4)));
-            $pins[] = [
-                'pin' => $pin,
-                'serial' => $serial
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => (string)($res['data']['message'] ?? 'Exam PIN generation could not be completed.')
             ];
-            $tokenParts[] = "PIN #$i: $pin | Serial: $serial";
         }
 
-        $tokenDisplay = implode("\n", $tokenParts);
+        $errMsg = is_array($res['data'] ?? null)
+            ? (string)($res['data']['message'] ?? ($res['data']['detail'] ?? 'Provider exam PIN gateway error.'))
+            : (string)($res['message'] ?? 'Exam PIN gateway is temporarily unavailable.');
 
         return [
-            'ok' => true,
-            'status' => 'successful',
-            'pins' => $pins,
-            'token_or_pin' => $tokenDisplay,
-            'provider_order_id' => 'EXAM-' . strtoupper(bin2hex(random_bytes(4))),
-            'message' => "Successfully generated $quantity " . strtoupper(str_replace('_', ' ', $examCode)) . " PIN(s)."
+            'ok' => false,
+            'status' => 'failed',
+            'message' => $errMsg
         ];
     }
 
     // =========================================================================
-    // BULK SMS
+    // BULK SMS (Termii Gateway)
     // =========================================================================
 
     public function sendBulkSms(string $senderId, array $recipients, string $message, string $reference): array
@@ -549,62 +647,57 @@ class UtilityProvider
 
         $sender = !empty($senderId) ? trim($senderId) : $this->termiiSenderId;
 
-        // Live Termii SMS Gateway if credentials configured
-        if (!empty($this->termiiApiKey)) {
-            $payload = [
-                'to' => $cleanRecipients,
-                'from' => $sender,
-                'sms' => $message,
-                'type' => 'plain',
-                'channel' => 'generic',
-                'api_key' => $this->termiiApiKey
+        if (empty($this->termiiApiKey)) {
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => 'Bulk SMS provider (Termii) is not configured.'
             ];
-
-            // If single recipient or provider prefers single string
-            if ($count === 1) {
-                $payload['to'] = $cleanRecipients[0];
-            }
-
-            $res = $this->httpPost($this->termiiBaseUrl . '/sms/send', $payload, [
-                "Content-Type: application/json",
-                "Accept: application/json"
-            ]);
-
-            if ($res['ok'] && is_array($res['data'])) {
-                $msgId = (string)($res['data']['message_id'] ?? bin2hex(random_bytes(5)));
-                return [
-                    'ok' => true,
-                    'status' => 'successful',
-                    'batch_id' => $msgId,
-                    'recipient_count' => $count,
-                    'provider_order_id' => $msgId,
-                    'message' => (string)($res['data']['message'] ?? "Bulk SMS dispatched to $count recipient(s) successfully.")
-                ];
-            }
-
-            // If Termii rejected the request (e.g. unapproved sender ID, insufficient funds, invalid number)
-            $errorMsg = is_array($res['data']) ? ($res['data']['message'] ?? ($res['data']['error'] ?? '')) : (string)($res['message'] ?? '');
-            if (!empty($errorMsg)) {
-                if (str_contains($errorMsg, 'SENDER_ID_NOT_APPROVED')) {
-                    $errorMsg = "Termii Error: Sender ID '$sender' is not yet approved on your Termii account. In Nigeria, telecom operators require custom Sender IDs to be registered and approved in your Termii dashboard (under 'Sender ID' menu) before SMS can be delivered to phone inboxes.";
-                }
-                return [
-                    'ok' => false,
-                    'status' => 'failed',
-                    'message' => $errorMsg
-                ];
-            }
         }
 
-        $batchId = 'SMS-' . strtoupper(bin2hex(random_bytes(5)));
+        // Live Termii SMS Gateway
+        $payload = [
+            'to' => $cleanRecipients,
+            'from' => $sender,
+            'sms' => $message,
+            'type' => 'plain',
+            'channel' => 'generic',
+            'api_key' => $this->termiiApiKey
+        ];
+
+        if ($count === 1) {
+            $payload['to'] = $cleanRecipients[0];
+        }
+
+        $res = $this->httpPost($this->termiiBaseUrl . '/sms/send', $payload, [
+            "Content-Type: application/json",
+            "Accept: application/json"
+        ]);
+
+        if ($res['ok'] && is_array($res['data'])) {
+            $msgId = (string)($res['data']['message_id'] ?? bin2hex(random_bytes(5)));
+            return [
+                'ok' => true,
+                'status' => 'successful',
+                'batch_id' => $msgId,
+                'recipient_count' => $count,
+                'provider_order_id' => $msgId,
+                'message' => (string)($res['data']['message'] ?? "Bulk SMS dispatched to $count recipient(s) successfully.")
+            ];
+        }
+
+        $errorMsg = is_array($res['data'] ?? null)
+            ? (string)($res['data']['message'] ?? ($res['data']['error'] ?? ''))
+            : (string)($res['message'] ?? '');
+
+        if (!empty($errorMsg) && (str_contains($errorMsg, 'SENDER_ID_NOT_APPROVED') || str_contains($errorMsg, 'Sender ID'))) {
+            $errorMsg = "Termii Error: Sender ID '$sender' is not yet approved on your Termii account. Nigerian telecom regulations require custom Sender IDs to be registered and approved before SMS can be delivered.";
+        }
 
         return [
-            'ok' => true,
-            'status' => 'successful',
-            'batch_id' => $batchId,
-            'recipient_count' => $count,
-            'provider_order_id' => $batchId,
-            'message' => "Bulk SMS dispatched to $count recipient(s) successfully."
+            'ok' => false,
+            'status' => 'failed',
+            'message' => $errorMsg ?: 'SMS gateway is unavailable or delivery could not be completed.'
         ];
     }
 

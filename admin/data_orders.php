@@ -134,9 +134,7 @@ if ($status !== "") {
     $params[] = $status;
 }
 
-if ($provider === "vtpass") {
-    $sql .= " AND (do.provider_name LIKE '%vtpass%' OR ap.slug = 'vtpass' OR dp.provider_id = 8)";
-} elseif ($provider === "cheapdatahub") {
+if ($provider === "cheapdatahub") {
     $sql .= " AND (do.provider_name LIKE '%cheapdatahub%' OR ap.slug = 'cheapdatahub' OR dp.provider_id = 1)";
 }
 
@@ -660,7 +658,7 @@ function providerStatusClass(
                     >
                         <option value="">All Providers</option>
                         <option value="cheapdatahub" <?= $provider === "cheapdatahub" ? "selected" : "" ?>>CheapDataHub</option>
-                        <option value="vtpass" <?= $provider === "vtpass" ? "selected" : "" ?>>VTpass</option>
+                        
                     </select>
                 </div>
 
@@ -1179,7 +1177,7 @@ function providerStatusClass(
                                     <?php if ($isVtpass): ?>
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 border border-purple-200">
                                             <span class="h-1.5 w-1.5 rounded-full bg-purple-600"></span>
-                                            VTpass
+                                            VTpass (Legacy)
                                         </span>
                                     <?php elseif ($isCdh): ?>
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-200">

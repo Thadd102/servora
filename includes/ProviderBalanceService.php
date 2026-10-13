@@ -5,10 +5,9 @@
  *
  * Responsibilities:
  * - Queries real-time supplier account balances for:
- *   1. CheapDataHub (Data & Airtime)
+ *   1. CheapDataHub (Airtime, Data, Cable & Electricity)
  *   2. 5SIM (Foreign Virtual Phone Numbers)
- *   3. VTpass (Electricity, Cable TV, Exam PINs)
- *   4. Termii (Bulk SMS Gateway)
+ *   3. Termii (Bulk SMS Gateway)
  *
  * Security & Reliability Directives:
  * - Provider credentials and internal keys are processed STRICTLY server-side.
@@ -24,10 +23,6 @@ class ProviderBalanceService
     private string $cheapDataHubBaseUrl;
     private string $fiveSimApiKey;
     private string $fiveSimBaseUrl;
-    private string $vtpassApiKey;
-    private string $vtpassPublicKey;
-    private string $vtpassSecretKey;
-    private string $vtpassBaseUrl;
     private string $termiiApiKey;
     private string $termiiBaseUrl;
 
@@ -42,12 +37,6 @@ class ProviderBalanceService
         // 5SIM
         $this->fiveSimApiKey = trim((string)(getenv('FIVESIM_API_KEY') ?: ($_ENV['FIVESIM_API_KEY'] ?? '')));
         $this->fiveSimBaseUrl = rtrim((string)(getenv('FIVESIM_BASE_URL') ?: ($_ENV['FIVESIM_BASE_URL'] ?? 'https://5sim.net/v1')), '/');
-
-        // VTpass
-        $this->vtpassApiKey = trim((string)(getenv('VTPASS_API_KEY') ?: ($_ENV['VTPASS_API_KEY'] ?? '')));
-        $this->vtpassPublicKey = trim((string)(getenv('VTPASS_PUBLIC_KEY') ?: ($_ENV['VTPASS_PUBLIC_KEY'] ?? '')));
-        $this->vtpassSecretKey = trim((string)(getenv('VTPASS_SECRET_KEY') ?: ($_ENV['VTPASS_SECRET_KEY'] ?? '')));
-        $this->vtpassBaseUrl = rtrim((string)(getenv('VTPASS_BASE_URL') ?: ($_ENV['VTPASS_BASE_URL'] ?? 'https://api-service.vtpass.com/api')), '/');
 
         // Termii
         $this->termiiApiKey = trim((string)(getenv('TERMII_API_KEY') ?: ($_ENV['TERMII_API_KEY'] ?? '')));
@@ -69,9 +58,8 @@ class ProviderBalanceService
         }
 
         return [
-            'cheapdatahub' => $this->buildPlaceholderPayload('cheapdatahub', 'CheapDataHub', 'Data & Airtime', '₦', 'NGN'),
+            'cheapdatahub' => $this->buildPlaceholderPayload('cheapdatahub', 'CheapDataHub', 'Airtime, Data, Cable & Electricity', '₦', 'NGN'),
             'fivesim' => $this->buildPlaceholderPayload('fivesim', '5SIM', 'Foreign Virtual Numbers', '$', 'USD'),
-            'vtpass' => $this->buildPlaceholderPayload('vtpass', 'VTpass', 'Data, Utilities & Exams', '₦', 'NGN'),
             'termii' => $this->buildPlaceholderPayload('termii', 'Termii', 'Bulk SMS Gateway', '₦', 'NGN'),
         ];
     }
@@ -99,7 +87,6 @@ class ProviderBalanceService
         $result = match ($providerKey) {
             'cheapdatahub' => $this->getCheapDataHubBalance(),
             'fivesim' => $this->getFiveSimBalance(),
-            'vtpass' => $this->getVtpassBalance(),
             'termii' => $this->getTermiiBalance(),
             default => null,
         };
@@ -122,7 +109,7 @@ class ProviderBalanceService
     public function getAllBalances(bool $forceRefresh = false): array
     {
         $balances = [];
-        $providers = ['cheapdatahub', 'fivesim', 'vtpass', 'termii'];
+        $providers = ['cheapdatahub', 'fivesim', 'termii'];
 
         foreach ($providers as $pKey) {
             try {
@@ -149,7 +136,7 @@ class ProviderBalanceService
     {
         $providerKey = 'cheapdatahub';
         $providerName = 'CheapDataHub';
-        $serviceName = 'Data & Airtime';
+        $serviceName = 'Airtime, Data, Cable & Electricity';
         $currencySymbol = '₦';
         $currencyCode = 'NGN';
 
@@ -275,84 +262,6 @@ class ProviderBalanceService
             'environment' => 'Live',
             'extra_info' => 'Email: ' . ($res['data']['email'] ?? 'Active Account') . ' | Rating: ' . ($res['data']['rating'] ?? 'N/A'),
             'message' => '5SIM profile balance retrieved successfully',
-            'timestamp' => date('Y-m-d H:i:s')
-        ];
-    }
-
-    /**
-     * Query VTpass wallet balance (Electricity, Cable TV, Exam PINs)
-     */
-    public function getVtpassBalance(): array
-    {
-        $providerKey = 'vtpass';
-        $providerName = 'VTpass';
-        $serviceName = 'Data, Utilities & Exams';
-        $currencySymbol = '₦';
-        $currencyCode = 'NGN';
-
-        if (empty($this->vtpassApiKey)) {
-            return $this->buildUnconfiguredPayload($providerKey, $providerName, $serviceName, $currencySymbol, $currencyCode);
-        }
-
-        $headers = [
-            "api-key: " . $this->vtpassApiKey,
-            "secret-key: " . $this->vtpassSecretKey,
-            "Accept: application/json"
-        ];
-        if (!empty($this->vtpassPublicKey)) {
-            $headers[] = "public-key: " . $this->vtpassPublicKey;
-        }
-
-        // Try primary configured baseUrl first
-        $endpoint = rtrim($this->vtpassBaseUrl, '/') . '/balance';
-        $res = $this->executeHttpRequest($endpoint, 'GET', $headers, 8);
-
-        // Resilient fallback: If live endpoint is down or user is using sandbox credentials (starts with PK_)
-        if ((!$res['ok'] || empty($res['data'])) && !str_contains($this->vtpassBaseUrl, 'sandbox')) {
-            $fallbackEndpoint = 'https://sandbox.vtpass.com/api/balance';
-            $res = $this->executeHttpRequest($fallbackEndpoint, 'GET', $headers, 8);
-        }
-
-        if (!$res['ok'] || !is_array($res['data'])) {
-            return $this->buildErrorPayload(
-                $providerKey,
-                $providerName,
-                $serviceName,
-                $currencySymbol,
-                $currencyCode,
-                $res['message'] ?: 'Failed to retrieve balance from VTpass'
-            );
-        }
-
-        // Format: {"code":1,"contents":{"balance":"2000000.00"}} or {"balance": ...}
-        $rawBalance = $res['data']['contents']['balance'] ?? ($res['data']['balance'] ?? null);
-
-        if ($rawBalance === null) {
-            return $this->buildErrorPayload(
-                $providerKey,
-                $providerName,
-                $serviceName,
-                $currencySymbol,
-                $currencyCode,
-                'Unexpected response format from VTpass'
-            );
-        }
-
-        $balanceFloat = (float)$rawBalance;
-        $isSandbox = str_contains($this->vtpassBaseUrl, 'sandbox') || str_starts_with($this->vtpassPublicKey, 'PK_');
-
-        return [
-            'provider' => $providerKey,
-            'name' => $providerName,
-            'service' => $serviceName,
-            'status' => 'connected',
-            'is_configured' => true,
-            'balance' => $balanceFloat,
-            'currency' => $currencyCode,
-            'symbol' => $currencySymbol,
-            'formatted' => $currencySymbol . number_format($balanceFloat, 2),
-            'environment' => $isSandbox ? 'Sandbox Test Wallet' : 'Live Production',
-            'message' => 'VTpass wallet balance retrieved successfully',
             'timestamp' => date('Y-m-d H:i:s')
         ];
     }

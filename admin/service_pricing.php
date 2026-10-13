@@ -176,8 +176,9 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between">
                 <div>
                     <h3 class="font-bold text-sm text-slate-900"><?= htmlspecialchars($svc['name']) ?></h3>
-                    <span class="inline-block mt-1 text-[10px] uppercase font-bold rounded-full px-2 py-0.5 <?= $isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600' ?>">
-                        <?= htmlspecialchars($svc['status']) ?>
+                    <span class="inline-flex items-center gap-1 mt-1 text-[10px] font-bold rounded-full px-2.5 py-0.5 <?= $isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200' ?>">
+                        <span class="h-1.5 w-1.5 rounded-full <?= $isActive ? 'bg-emerald-500' : 'bg-amber-500' ?>"></span>
+                        <?= $isActive ? 'Active' : 'Not Active' ?>
                     </span>
                 </div>
                 <form method="POST">

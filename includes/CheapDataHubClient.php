@@ -738,6 +738,314 @@ class CheapDataHubClient
 
     /*
     |--------------------------------------------------------------------------
+    | FORMAT LOCAL NIGERIAN PHONE NUMBER
+    |--------------------------------------------------------------------------
+    */
+
+    private function formatLocalPhone(string $phoneNumber): ?string
+    {
+        $cleaned = preg_replace('/\D+/', '', $phoneNumber);
+
+        if (str_starts_with($cleaned, "234")) {
+            $cleaned = "0" . substr($cleaned, 3);
+        }
+
+        if (!preg_match('/^0\d{10}$/', $cleaned)) {
+            return null;
+        }
+
+        return $cleaned;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PURCHASE AIRTIME
+    |--------------------------------------------------------------------------
+    | CheapDataHub Reseller API:
+    | POST /api/v1/resellers/airtime/purchase/
+    | Body: { provider_id: int (1=MTN, 2=GLO, 3=AIRTEL, 4=9MOBILE), phone_number: str, amount: num }
+    |--------------------------------------------------------------------------
+    */
+
+    public function purchaseAirtime(
+        int $providerId,
+        string $phoneNumber,
+        float|int $amount
+    ): array {
+        if ($providerId < 1 || $providerId > 4) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Invalid telecom provider ID.",
+                "data" => null
+            ];
+        }
+
+        if ($amount < 50) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Minimum airtime recharge is ₦50.",
+                "data" => null
+            ];
+        }
+
+        $formattedPhone = $this->formatLocalPhone($phoneNumber);
+        if ($formattedPhone === null) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Invalid phone number format.",
+                "data" => null
+            ];
+        }
+
+        return $this->request(
+            "POST",
+            "airtime/purchase/",
+            [
+                "provider_id" => $providerId,
+                "phone_number" => $formattedPhone,
+                "amount" => (int)$amount
+            ]
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE ELECTRICITY METER
+    |--------------------------------------------------------------------------
+    | CheapDataHub Reseller API:
+    | POST /api/v1/resellers/electricity/validate/
+    | Body: { disco_id: int, meter_type: "prepaid"|"postpaid", meter_number: str }
+    |--------------------------------------------------------------------------
+    */
+
+    public function validateMeter(
+        int $discoId,
+        string $meterNumber,
+        string $meterType = "prepaid"
+    ): array {
+        $cleanMeter = trim($meterNumber);
+        if ($discoId <= 0 || strlen($cleanMeter) < 5) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Invalid disco ID or meter number.",
+                "data" => null
+            ];
+        }
+
+        $normalizedType = strtolower(trim($meterType)) === "postpaid" ? "postpaid" : "prepaid";
+
+        return $this->request(
+            "POST",
+            "electricity/validate/",
+            [
+                "disco_id" => $discoId,
+                "meter_type" => $normalizedType,
+                "meter_number" => $cleanMeter
+            ]
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PURCHASE ELECTRICITY TOKEN / RECHARGE
+    |--------------------------------------------------------------------------
+    | CheapDataHub Reseller API:
+    | POST /api/v1/resellers/electricity/purchase/
+    | Body: { disco_id: int, meter_number: str, amount: num, meter_type: str, phone: str }
+    |--------------------------------------------------------------------------
+    */
+
+    public function purchaseElectricity(
+        int $discoId,
+        string $meterNumber,
+        string $meterType,
+        float|int $amount,
+        string $phone
+    ): array {
+        $cleanMeter = trim($meterNumber);
+        if ($discoId <= 0 || strlen($cleanMeter) < 5) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Invalid disco ID or meter number.",
+                "data" => null
+            ];
+        }
+
+        if ($amount < 1000) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Minimum electricity recharge is ₦1,000.",
+                "data" => null
+            ];
+        }
+
+        $formattedPhone = $this->formatLocalPhone($phone) ?: preg_replace('/\D+/', '', $phone);
+        $normalizedType = strtolower(trim($meterType)) === "postpaid" ? "postpaid" : "prepaid";
+
+        return $this->request(
+            "POST",
+            "electricity/purchase/",
+            [
+                "disco_id" => $discoId,
+                "meter_number" => $cleanMeter,
+                "amount" => (int)$amount,
+                "meter_type" => $normalizedType,
+                "phone" => $formattedPhone
+            ]
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE CABLE TV SMARTCARD / IUC
+    |--------------------------------------------------------------------------
+    | CheapDataHub Reseller API:
+    | POST /api/v1/resellers/cable/validate/
+    | Body: { plan_id: int, smart_card_number: str }
+    |--------------------------------------------------------------------------
+    */
+
+    public function validateCable(
+        int $planId,
+        string $smartCardNumber
+    ): array {
+        $cleanCard = trim($smartCardNumber);
+        if ($planId <= 0 || strlen($cleanCard) < 5) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Invalid plan ID or smartcard/IUC number.",
+                "data" => null
+            ];
+        }
+
+        return $this->request(
+            "POST",
+            "cable/validate/",
+            [
+                "plan_id" => $planId,
+                "smart_card_number" => $cleanCard
+            ]
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PURCHASE CABLE TV SUBSCRIPTION
+    |--------------------------------------------------------------------------
+    | CheapDataHub Reseller API:
+    | POST /api/v1/resellers/cable/purchase/
+    | Body: { plan_id: int, cardnumber: str, phone: str }
+    |--------------------------------------------------------------------------
+    */
+
+    public function purchaseCable(
+        int $planId,
+        string $smartCardNumber,
+        string $phone
+    ): array {
+        $cleanCard = trim($smartCardNumber);
+        if ($planId <= 0 || strlen($cleanCard) < 5) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Invalid cable plan ID or smartcard number.",
+                "data" => null
+            ];
+        }
+
+        $formattedPhone = $this->formatLocalPhone($phone) ?: preg_replace('/\D+/', '', $phone);
+
+        return $this->request(
+            "POST",
+            "cable/purchase/",
+            [
+                "plan_id" => $planId,
+                "cardnumber" => $cleanCard,
+                "phone" => $formattedPhone
+            ]
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET EXAM PIN PRODUCTS
+    |--------------------------------------------------------------------------
+    | CheapDataHub Reseller API:
+    | GET /api/v1/resellers/exam-pin/products/
+    |--------------------------------------------------------------------------
+    */
+
+    public function getExamPinProducts(): array
+    {
+        return $this->request(
+            "GET",
+            "exam-pin/products/"
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PURCHASE EXAM PIN
+    |--------------------------------------------------------------------------
+    | CheapDataHub Reseller API:
+    | POST /api/v1/resellers/exam-pin/purchase/
+    | Body: { product_id: int, quantity: int (1, 2, or 5) }
+    |--------------------------------------------------------------------------
+    */
+
+    public function purchaseExamPin(
+        int $productId,
+        int $quantity = 1
+    ): array {
+        if ($productId <= 0) {
+            return [
+                "ok" => false,
+                "state" => "failed",
+                "http_status" => 0,
+                "message" => "Invalid exam PIN product ID.",
+                "data" => null
+            ];
+        }
+
+        if (!in_array($quantity, [1, 2, 5], true)) {
+            $quantity = 1;
+        }
+
+        return $this->request(
+            "POST",
+            "exam-pin/purchase/",
+            [
+                "product_id" => $productId,
+                "quantity" => $quantity
+            ]
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | GET TRANSACTION HISTORY
     |--------------------------------------------------------------------------
     */

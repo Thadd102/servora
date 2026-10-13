@@ -2,6 +2,9 @@
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../includes/client_auth.php";
 require_once __DIR__ . "/../includes/UtilityOrderProcessor.php";
+require_once __DIR__ . "/../includes/ServiceAvailability.php";
+
+$isElectricityActive = ServiceAvailability::isServiceActive($pdo, 'electricity');
 
 $userId = currentUserId();
 
@@ -25,23 +28,35 @@ $successMessage = null;
 $errorMessage = null;
 $orderDetails = null;
 
-// Discos list
-$discos = [
-    ['code' => 'ikeja_electric', 'name' => 'Ikeja Electric (IKEDC)'],
-    ['code' => 'eko_electric', 'name' => 'Eko Electricity (EKEDC)'],
-    ['code' => 'abuja_electric', 'name' => 'Abuja Electricity (AEDC)'],
-    ['code' => 'ibadan_electric', 'name' => 'Ibadan Electricity (IBEDC)'],
-    ['code' => 'kano_electric', 'name' => 'Kano Electricity (KEDCO)'],
-    ['code' => 'portharcourt_electric', 'name' => 'Port Harcourt Electricity (PHED)'],
-    ['code' => 'enugu_electric', 'name' => 'Enugu Electricity (EEDC)'],
-    ['code' => 'kaduna_electric', 'name' => 'Kaduna Electric (KAEDCO)'],
-    ['code' => 'jos_electric', 'name' => 'Jos Electricity (JED)'],
-    ['code' => 'benin_electric', 'name' => 'Benin Electricity (BEDC)'],
-    ['code' => 'aba_electric', 'name' => 'Aba Power (APLE)']
-];
+// Fetch active CheapDataHub Discos from service_products
+$stmt = $pdo->query("
+    SELECT product_code AS code, name
+    FROM service_products
+    WHERE service_slug = 'electricity' AND status = 'active'
+    ORDER BY name ASC
+");
+$discos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if (empty($discos)) {
+    $discos = [
+        ['code' => 'abuja_electric', 'name' => 'Abuja Electricity (AEDC)'],
+        ['code' => 'benin_electric', 'name' => 'Benin Electricity (BEDC)'],
+        ['code' => 'eko_electric', 'name' => 'Eko Electricity (EKEDC)'],
+        ['code' => 'enugu_electric', 'name' => 'Enugu Electricity (EEDC)'],
+        ['code' => 'ibadan_electric', 'name' => 'Ibadan Electricity (IBEDC)'],
+        ['code' => 'ikeja_electric', 'name' => 'Ikeja Electric (IKEDC)'],
+        ['code' => 'jos_electric', 'name' => 'Jos Electricity Distribution PLC (JEDPLC)'],
+        ['code' => 'kaduna_electric', 'name' => 'Kaduna Electric (KAEDCO)'],
+        ['code' => 'portharcourt_electric', 'name' => 'Port Harcourt Electricity (PHED)'],
+        ['code' => 'yola_electric', 'name' => 'Yola Electricity (YEDC)']
+    ];
+}
 
 // Handle submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!$isElectricityActive) {
+        $errorMessage = "Electricity bill payment service is currently not active. Please check back later.";
+    } else
     $submittedCsrf = trim((string)($_POST["csrf_token"] ?? ""));
     if (!hash_equals($csrfToken, $submittedCsrf)) {
         $errorMessage = "Invalid security token. Please refresh the page.";
@@ -56,8 +71,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if (empty($disco) || empty($meterNumber)) {
             $errorMessage = "Please select a disco and enter your meter number.";
-        } elseif ($amount < 500) {
-            $errorMessage = "Minimum electricity bill payment is ₦500.";
+        } elseif ($amount < 1000) {
+            $errorMessage = "Minimum electricity bill payment is ₦1,000.";
         } elseif (empty($phone)) {
             $errorMessage = "Please enter your contact phone number to receive token notification.";
         } else {
@@ -233,6 +248,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
     <?php endif; ?>
 
+    <?php if (!$isElectricityActive): ?>
+        <?php ServiceAvailability::renderInactiveNotice('Electricity Bills'); ?>
+    <?php else: ?>
     <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
         <div>
             <p class="text-xs font-bold uppercase tracking-widest text-servora-600">Electricity Recharge</p>
@@ -295,7 +313,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <!-- Amount -->
             <div>
                 <label for="amount" class="block text-sm font-semibold text-slate-700 mb-1">4. Payment Amount (₦)</label>
-                <input type="number" id="amount" name="amount" min="500" max="100000" step="50" placeholder="Minimum ₦500" required
+                <input type="number" id="amount" name="amount" min="1000" max="100000" step="50" placeholder="Minimum ₦1,000" required
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base font-semibold text-slate-900 placeholder-slate-400 focus:border-servora-600 focus:outline-none focus:ring-2 focus:ring-servora-200">
             </div>
 
@@ -312,6 +330,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </button>
         </form>
     </section>
+    <?php endif; ?>
 </main>
 
 <script>
@@ -339,10 +358,12 @@ function verifyMeter() {
             } else {
                 document.getElementById('meterCustomerName').innerHTML = '❌ ' + (data.message || 'Unable to verify meter');
                 document.getElementById('meterCustomerAddress').innerText = 'Please ensure the disco and meter number are correct.';
+                document.getElementById('customer_name').value = '';
             }
         })
         .catch(function() {
-            document.getElementById('meterCustomerName').innerText = 'Verification error. You may still proceed.';
+            document.getElementById('meterCustomerName').innerText = 'Verification service error. Please check your connection and try again.';
+            document.getElementById('customer_name').value = '';
         });
 }
 

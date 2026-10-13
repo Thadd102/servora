@@ -1,14 +1,12 @@
 <?php
 
 require_once __DIR__ . "/CheapDataHubClient.php";
-require_once __DIR__ . "/VTPassDataClient.php";
 require_once __DIR__ . "/DataOrderRefundService.php";
 
 class DataProviderProcessor
 {
     private PDO $pdo;
     private ?CheapDataHubClient $cheapDataHub;
-    private ?VTPassDataClient $vtpassClient;
     private DataOrderRefundService $refundService;
 
 
@@ -20,12 +18,10 @@ class DataProviderProcessor
 
     public function __construct(
         PDO $pdo,
-        ?CheapDataHubClient $cheapDataHub = null,
-        ?VTPassDataClient $vtpassClient = null
+        ?CheapDataHubClient $cheapDataHub = null
     ) {
         $this->pdo = $pdo;
         $this->cheapDataHub = $cheapDataHub;
-        $this->vtpassClient = $vtpassClient;
 
         $this->refundService = new DataOrderRefundService($pdo);
     }
@@ -164,13 +160,13 @@ class DataProviderProcessor
 
             /*
             |--------------------------------------------------------------------------
-            | SUPPORTED PROVIDERS: CheapDataHub & VTPass
+            | SUPPORTED PROVIDER: CheapDataHub
             |--------------------------------------------------------------------------
             */
 
             $providerSlug = strtolower(trim((string)($order["provider_slug"] ?? '')));
 
-            if (!in_array($providerSlug, ["cheapdatahub", "vtpass"], true)) {
+            if ($providerSlug !== "cheapdatahub") {
                 $this->pdo->rollBack();
 
                 return [
@@ -187,39 +183,19 @@ class DataProviderProcessor
             |--------------------------------------------------------------------------
             */
 
-            $bundleId = null;
-            $variationCode = null;
-            $requestReference = "";
+            $bundleId = filter_var($order["provider_plan_code"], FILTER_VALIDATE_INT);
 
-            if ($providerSlug === "cheapdatahub") {
-                $bundleId = filter_var($order["provider_plan_code"], FILTER_VALIDATE_INT);
+            if ($bundleId === false || $bundleId <= 0) {
+                $this->pdo->rollBack();
 
-                if ($bundleId === false || $bundleId <= 0) {
-                    $this->pdo->rollBack();
-
-                    return [
-                        "success" => false,
-                        "state" => "configuration_error",
-                        "message" => "Invalid supplier bundle configuration."
-                    ];
-                }
-
-                $requestReference = "CDH-" . $order["order_reference"] . "-" . strtoupper(bin2hex(random_bytes(3)));
-            } elseif ($providerSlug === "vtpass") {
-                $variationCode = trim((string)$order["provider_plan_code"]);
-
-                if ($variationCode === "") {
-                    $this->pdo->rollBack();
-
-                    return [
-                        "success" => false,
-                        "state" => "configuration_error",
-                        "message" => "Invalid supplier variation code configuration."
-                    ];
-                }
-
-                $requestReference = VTPassDataClient::generateRequestId($order["order_reference"]);
+                return [
+                    "success" => false,
+                    "state" => "configuration_error",
+                    "message" => "Invalid supplier bundle configuration."
+                ];
             }
+
+            $requestReference = "CDH-" . $order["order_reference"] . "-" . strtoupper(bin2hex(random_bytes(3)));
 
 
             /*
@@ -270,7 +246,7 @@ class DataProviderProcessor
 
             $providerDisplayName = trim((string)($order["provider_name"] ?? ''));
             if ($providerDisplayName === '') {
-                $providerDisplayName = ($providerSlug === 'vtpass') ? 'VTpass' : 'CheapDataHub';
+                $providerDisplayName = 'CheapDataHub';
             }
 
             $stmt = $this->pdo->prepare("
@@ -316,7 +292,7 @@ class DataProviderProcessor
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 2: CALL SUPPLIER API (CHEAPDATAHUB OR VTPASS)
+        | STEP 2: CALL SUPPLIER API (CHEAPDATAHUB)
         |--------------------------------------------------------------------------
         |
         | The order is already locked in 'processing'.
@@ -326,41 +302,16 @@ class DataProviderProcessor
 
         try {
 
-            if ($providerSlug === "cheapdatahub") {
-                if ($this->cheapDataHub === null) {
-                    $apiKey = $_ENV["CHEAPDATAHUB_API_KEY"] ?? getenv("CHEAPDATAHUB_API_KEY");
-                    $baseUrl = $_ENV["CHEAPDATAHUB_BASE_URL"] ?? getenv("CHEAPDATAHUB_BASE_URL") ?: "https://www.cheapdatahub.ng/api/v1/resellers/";
-                    $this->cheapDataHub = new CheapDataHubClient($apiKey, $baseUrl);
-                }
-
-                $result = $this->cheapDataHub->purchaseData(
-                    (int)$bundleId,
-                    $order["phone_number"]
-                );
-            } elseif ($providerSlug === "vtpass") {
-                if ($this->vtpassClient === null) {
-                    $this->vtpassClient = new VTPassDataClient();
-                }
-
-                $networkSlug = strtolower(trim((string)($order["network_slug"] ?? '')));
-                $serviceIdMap = [
-                    'mtn'     => 'mtn-data',
-                    'airtel'  => 'airtel-data',
-                    'glo'     => 'glo-data',
-                    't2'      => 'etisalat-data',
-                    '9mobile' => 'etisalat-data'
-                ];
-                $serviceId = $serviceIdMap[$networkSlug] ?? 'mtn-data';
-                $costAmount = (float)($order["cost_price"] ?? 0);
-
-                $result = $this->vtpassClient->purchaseData(
-                    $serviceId,
-                    $variationCode,
-                    $costAmount,
-                    $order["phone_number"],
-                    $requestReference
-                );
+            if ($this->cheapDataHub === null) {
+                $apiKey = $_ENV["CHEAPDATAHUB_API_KEY"] ?? getenv("CHEAPDATAHUB_API_KEY");
+                $baseUrl = $_ENV["CHEAPDATAHUB_BASE_URL"] ?? getenv("CHEAPDATAHUB_BASE_URL") ?: "https://www.cheapdatahub.ng/api/v1/resellers/";
+                $this->cheapDataHub = new CheapDataHubClient($apiKey, $baseUrl);
             }
+
+            $result = $this->cheapDataHub->purchaseData(
+                (int)$bundleId,
+                $order["phone_number"]
+            );
 
         } catch (Throwable $e) {
 
@@ -417,55 +368,32 @@ class DataProviderProcessor
         $isConfirmedSuccess = false;
         $providerReference = null;
 
-        if ($providerSlug === "cheapdatahub") {
-            if (
-                ($result["ok"] ?? false) === true &&
-                is_array($response) &&
-                isset($response["status"]) &&
-                in_array(
-                    $response["status"],
-                    [true, 1, "1", "true", "successful", "success"],
-                    true
-                )
-            ) {
-                $isConfirmedSuccess = true;
+        if (
+            ($result["ok"] ?? false) === true &&
+            is_array($response) &&
+            isset($response["status"]) &&
+            in_array(
+                $response["status"],
+                [true, 1, "1", "true", "successful", "success"],
+                true
+            )
+        ) {
+            $isConfirmedSuccess = true;
 
-                $possibleProviderReferences = [
-                    $response["reference"] ?? null,
-                    $response["tx_ref"] ?? null,
-                    $response["data"]["reference"] ?? null,
-                    $response["data"]["tx_ref"] ?? null
-                ];
+            $possibleProviderReferences = [
+                $response["reference"] ?? null,
+                $response["tx_ref"] ?? null,
+                $response["details"]["ident"] ?? null,
+                $response["details"]["id"] ?? null,
+                $response["data"]["reference"] ?? null,
+                $response["data"]["tx_ref"] ?? null,
+                $requestReference
+            ];
 
-                foreach ($possibleProviderReferences as $possibleReference) {
-                    if (is_scalar($possibleReference) && trim((string) $possibleReference) !== "") {
-                        $providerReference = trim((string) $possibleReference);
-                        break;
-                    }
-                }
-            }
-        } elseif ($providerSlug === "vtpass") {
-            $vtState = (string)($result["state"] ?? "");
-            $vtCode = (string)($result["code"] ?? "");
-
-            if (
-                ($result["ok"] ?? false) === true &&
-                ($vtState === "successful" || $vtCode === "000")
-            ) {
-                $isConfirmedSuccess = true;
-
-                $possibleReferences = [
-                    $response["content"]["transactions"]["transactionId"] ?? null,
-                    $response["transactionId"] ?? null,
-                    $response["requestId"] ?? null,
-                    $requestReference
-                ];
-
-                foreach ($possibleReferences as $cand) {
-                    if (is_scalar($cand) && trim((string)$cand) !== "") {
-                        $providerReference = trim((string)$cand);
-                        break;
-                    }
+            foreach ($possibleProviderReferences as $possibleReference) {
+                if (is_scalar($possibleReference) && trim((string) $possibleReference) !== "") {
+                    $providerReference = trim((string) $possibleReference);
+                    break;
                 }
             }
         }

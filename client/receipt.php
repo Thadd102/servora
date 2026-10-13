@@ -27,8 +27,23 @@ $profileInitial = strtoupper(substr($fullName, 0, 1) ?: "C");
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $receipt ? 'Receipt #' . htmlspecialchars($receipt['receipt_no']) : 'Receipt Not Found' ?> - Subnext</title>
-    <!-- Precompiled Production Stylesheet -->
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        servora: {
+                            50: '#F5F3FF', 100: '#EDE9FE', 200: '#DDD6FE',
+                            500: '#635BDB', 600: '#5146C7', 700: '#3E37B7',
+                            800: '#312E81', 900: '#1E1B4B'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -92,7 +107,7 @@ $profileInitial = strtoupper(substr($fullName, 0, 1) ?: "C");
         <a href="dashboard.php" class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-servora-700 text-lg font-black text-white shadow-sm">S</div>
             <div>
-                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Subnext</div>
+                <div class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Servora</div>
                 <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Official Receipt</div>
             </div>
         </a>
@@ -135,10 +150,10 @@ $profileInitial = strtoupper(substr($fullName, 0, 1) ?: "C");
 
         <!-- ACTION CONTROLS (HIDDEN IN PRINT) -->
         <div class="no-print mb-6 flex flex-wrap items-center justify-between gap-3 action-bar">
-            <a href="javascript:history.back()" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-servora-700 transition">
+            <!-- <a href="javascript:history.back()" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-servora-700 transition">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 Back
-            </a>
+            </a> -->
 
             <div class="flex items-center gap-2">
                 <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 rounded-xl bg-servora-700 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-servora-800 active:scale-95 transition">
@@ -157,7 +172,7 @@ $profileInitial = strtoupper(substr($fullName, 0, 1) ?: "C");
         </div>
 
         <!-- =========================================================
-             OFFICIAL SUBNEXT RECEIPT CONTAINER (PRINTABLE)
+             OFFICIAL SERVORA RECEIPT CONTAINER (PRINTABLE)
         ========================================================= -->
         <article class="receipt-wrapper">
             <div class="receipt-card relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 shadow-xl">
@@ -170,9 +185,9 @@ $profileInitial = strtoupper(substr($fullName, 0, 1) ?: "C");
                             S
                         </div>
                         <div>
-                            <div class="text-2xl font-black tracking-tight text-slate-900 leading-tight">Subnext</div>
-                            <p class="text-xs font-medium text-slate-400 uppercase tracking-widest mt-0.5">Digital Services, Simplified.</p>
-                            <p class="text-[11px] text-slate-500 font-mono mt-0.5">support@subnext.com.ng • subnext.com.ng</p>
+                            <div class="text-2xl font-black tracking-tight text-slate-900 leading-tight">Servora</div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-widest mt-0.5">Instant Digital Services</p>
+                            <p class="text-[11px] text-slate-500 font-mono mt-0.5">support@servora.com • www.servora.com</p>
                         </div>
                     </div>
 
@@ -305,14 +320,14 @@ $profileInitial = strtoupper(substr($fullName, 0, 1) ?: "C");
                         <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                         </svg>
-                        <span>Authentic Subnext Verified Electronic Receipt</span>
+                        <span>Authentic Servora Verified Electronic Receipt</span>
                     </div>
                     <p class="text-[11px] leading-relaxed">
-                        This is an official computer-generated receipt issued by Subnext. No physical signature is required.<br>
-                        For transaction enquiries, contact <strong class="text-slate-600">support@subnext.com.ng</strong> quoting reference <span class="font-mono font-bold text-slate-700"><?= htmlspecialchars($receipt['reference']) ?></span>.
+                        This is an official computer-generated receipt issued by Servora. No physical signature is required.<br>
+                        For transaction enquiries, contact <strong class="text-slate-600">support@servora.com</strong> quoting reference <span class="font-mono font-bold text-slate-700"><?= htmlspecialchars($receipt['reference']) ?></span>.
                     </p>
                     <p class="text-[10px] text-slate-400 font-mono">
-                        Generated on <?= date('d M Y, h:i:s A') ?> • Subnext Platform v2.0
+                        Generated on <?= date('d M Y, h:i:s A') ?> • Servora Platform v2.0
                     </p>
                 </div>
 
