@@ -25,7 +25,13 @@ if ((string)$allowBootstrap !== '1') {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>403 Forbidden - Subnext</title>
         <link rel="stylesheet" href="assets/css/style.css">
-    </head>
+        <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png">
+</head>
     <body class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div class="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
             <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4 font-bold text-xl">✕</div>

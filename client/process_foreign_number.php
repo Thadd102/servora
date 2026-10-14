@@ -49,6 +49,12 @@ function renderProcessError(string $title, string $message, array $options = [])
     <title><?= htmlspecialchars($title) ?> | Subnext</title>
     <!-- Precompiled Production Stylesheet -->
     <link rel="stylesheet" href="../assets/css/style.css">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
 </head>
 <body class="min-h-screen bg-[#F6F7FB] text-slate-900 antialiased flex flex-col justify-between selection:bg-[#3E37B7] selection:text-white pb-20 md:pb-0">
 
