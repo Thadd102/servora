@@ -338,7 +338,14 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500/30 px-4 py-3 text-xs font-bold text-white ring-1 ring-inset ring-blue-300/40 hover:bg-blue-500/50 transition shadow-sm"
                 >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    Sync CheapDataHub Plans
+                    Sync CheapDataHub
+                </a>
+                <a
+                    href="sync_smeapi_plans.php"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500/30 px-4 py-3 text-xs font-bold text-white ring-1 ring-inset ring-indigo-300/40 hover:bg-indigo-500/50 transition shadow-sm"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Sync SMEAPI Plans
                 </a>
                 <a
                     href="data_orders.php"
@@ -593,6 +600,12 @@ $dataPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         class="rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition"
                     >
                         Sync CheapDataHub
+                    </a>
+                    <a
+                        href="sync_smeapi_plans.php"
+                        class="rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition"
+                    >
+                        Sync SMEAPI
                     </a>
                     <a
                         href="data_plans.php"

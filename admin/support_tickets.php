@@ -61,6 +61,7 @@ if (isset($_GET['status_updated'])) {
                 <a href="foreign_number_orders.php" class="px-3 py-2 rounded-lg hover:bg-slate-100">Foreign Numbers</a>
                 <a href="support_tickets.php" class="px-3 py-2 rounded-lg bg-servora-50 text-servora-700">Support</a>
                 <a href="clients.php" class="px-3 py-2 rounded-lg hover:bg-slate-100">Clients</a>
+                <a href="settings.php" class="px-3 py-2 rounded-lg hover:bg-slate-100 text-emerald-700">WhatsApp Settings</a>
             </nav>
         </div>
         <div class="flex items-center gap-3">
@@ -83,9 +84,15 @@ if (isset($_GET['status_updated'])) {
             <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">Support Tickets</h1>
             <p class="text-sm text-slate-500">View, reply to, and resolve client inquiries, payments disputes, and order issues.</p>
         </div>
-        <a href="dashboard.php" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-servora-700 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-xs">
-            ← Back to Dashboard
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="settings.php" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl shadow-xs">
+                <svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.33 7.34 9 7.42 8.71 7.73C8.42 8.04 7.6 8.81 7.6 10.37C7.6 11.93 8.74 13.44 8.9 13.65C9.06 13.86 11.13 17.05 14.3 18.42C15.06 18.75 15.65 18.95 16.11 19.09C16.87 19.33 17.57 19.3 18.12 19.22C18.74 19.13 20.02 18.45 20.28 17.7C20.55 16.96 20.55 16.33 20.47 16.2C20.39 16.07 20.19 16 19.88 15.84C19.58 15.68 18.07 14.94 17.79 14.84C17.51 14.73 17.31 14.68 17.11 14.99C16.9 15.29 16.33 15.97 16.15 16.17C15.98 16.38 15.8 16.4 15.5 16.25C15.19 16.1 13.9 15.67 12.36 14.3C11.17 13.23 10.36 11.91 10.06 11.4C9.75 10.89 10.03 10.61 10.18 10.46C10.32 10.32 10.49 10.09 10.65 9.91C10.8 9.72 10.85 9.59 10.95 9.38C11.06 9.18 11 9 10.93 8.85C10.85 8.7 10.28 7.31 10.05 6.74C9.82 6.19 9.58 6.27 9.4 6.26L8.85 6.25C8.65 6.25 8.35 6.33 8.05 6.64L9.53 7.34Z"/></svg>
+                WhatsApp Settings
+            </a>
+            <a href="dashboard.php" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-servora-700 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-xs">
+                ← Back to Dashboard
+            </a>
+        </div>
     </div>
 
     <?php if ($message !== ''): ?>

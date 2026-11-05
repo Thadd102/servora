@@ -82,4 +82,8 @@ $isProfile = in_array($currentPage, [
         </a>
     </div>
 </nav>
+<?php
+require_once __DIR__ . '/whatsapp_widget.php';
+renderSubnextWhatsAppWidget(true);
+?>
 <script src="../assets/js/loader.js" defer></script>

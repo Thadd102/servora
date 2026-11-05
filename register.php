@@ -2,6 +2,11 @@
 
 require_once "config/database.php";
 require_once "includes/auth.php";
+require_once "includes/EmailService.php";
+
+if (isset($_GET['reset'])) {
+    unset($_SESSION['pending_reg_id'], $_SESSION['pending_reg_email'], $_SESSION['pending_reg_name']);
+}
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -325,71 +330,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 } else {
 
-                    $pdo->beginTransaction();
+                    /* ========================================================
+                       EMAIL OTP VERIFICATION BEFORE ACCOUNT CREATION
+                       - 6-digit OTP sent to customer email
+                       - OTP expires after 5 minutes
+                       - Resend with 60s cooldown
+                       - Max 5 incorrect attempts limit
+                       - Secure password_hash validation on backend
+                       - Reuses existing SMTP configuration via EmailService
+                    ======================================================== */
 
-                    /* =========================
-                       CREATE USER
-                    ========================= */
+                    // Ensure registration_verifications table exists
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS registration_verifications (
+                            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                            email VARCHAR(191) NOT NULL,
+                            full_name VARCHAR(191) NOT NULL,
+                            phone VARCHAR(30) NOT NULL,
+                            password_hash VARCHAR(255) NOT NULL,
+                            otp_hash VARCHAR(255) NOT NULL,
+                            attempts INT DEFAULT 0,
+                            used TINYINT(1) DEFAULT 0,
+                            resend_cooldown_until DATETIME NOT NULL,
+                            expires_at DATETIME NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            INDEX idx_regv_email (email),
+                            INDEX idx_regv_used (used),
+                            INDEX idx_regv_expires (expires_at)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    ");
 
-                    $hashedPassword = password_hash(
-                        $password,
-                        PASSWORD_DEFAULT
+                    // Invalidate previous unused pending verification records for this email
+                    $invStmt = $pdo->prepare("
+                        UPDATE registration_verifications
+                        SET used = 1
+                        WHERE email = ? AND used = 0
+                    ");
+                    $invStmt->execute([$email]);
+
+                    $otp = (string) random_int(100000, 999999);
+                    $otpHash = password_hash($otp, PASSWORD_DEFAULT);
+                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+                    $insertStmt = $pdo->prepare("
+                        INSERT INTO registration_verifications (
+                            email,
+                            full_name,
+                            phone,
+                            password_hash,
+                            otp_hash,
+                            attempts,
+                            used,
+                            resend_cooldown_until,
+                            expires_at,
+                            created_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, 0, 0, DATE_ADD(NOW(), INTERVAL 60 SECOND), DATE_ADD(NOW(), INTERVAL 5 MINUTE), NOW())
+                    ");
+                    $insertStmt->execute([
+                        $email,
+                        $fullName,
+                        $phone,
+                        $hashedPassword,
+                        $otpHash
+                    ]);
+
+                    $regVerificationId = (int) $pdo->lastInsertId();
+
+                    $_SESSION['pending_reg_id'] = $regVerificationId;
+                    $_SESSION['pending_reg_email'] = $email;
+                    $_SESSION['pending_reg_name'] = $fullName;
+
+                    // Send email OTP (5-minute expiry)
+                    $mailSent = EmailService::sendOtpEmail(
+                        $email,
+                        $fullName,
+                        $otp,
+                        'Account Registration',
+                        5
                     );
 
-                    $stmt = $pdo->prepare("
-                        INSERT INTO users
-                        (
-                            full_name,
-                            email,
-                            phone,
-                            password,
-                            role,
-                            status
-                        )
-                        VALUES (?, ?, ?, ?, 'client', 'active')
-                    ");
-
-                    $stmt->execute([
-                        $fullName,
-                        $email,
-                        $phone,
-                        $hashedPassword
-                    ]);
-
-                    $userId = (int) $pdo->lastInsertId();
-
-                    /* =========================
-                       CREATE WALLET
-                    ========================= */
-
-                    $stmt = $pdo->prepare("
-                        INSERT INTO wallets
-                        (
-                            user_id,
-                            balance
-                        )
-                        VALUES (?, 0.00)
-                    ");
-
-                    $stmt->execute([
-                        $userId
-                    ]);
-
-                    $pdo->commit();
-
-                    /* =========================
-                       LOGIN USER
-                    ========================= */
-
-                    session_regenerate_id(true);
-
-                    $_SESSION['user_id'] = $userId;
-                    $_SESSION['full_name'] = $fullName;
-                    $_SESSION['email'] = $email;
-                    $_SESSION['role'] = 'client';
-
-                    header("Location: client/dashboard.php");
-                    exit;
+                    if (!$mailSent) {
+                        $lastErr = EmailService::getLastError();
+                        $error = "Unable to dispatch verification OTP email: " . htmlspecialchars($lastErr ?: 'Mailer delivery failed', ENT_QUOTES, 'UTF-8') . ". Please check mail configuration or contact support.";
+                    } else {
+                        header("Location: verify_registration.php");
+                        exit;
+                    }
                 }
 
             } catch (Throwable $e) {
@@ -1007,6 +1034,8 @@ $captchaQuestion = $_SESSION['reg_captcha_question'];
         }
     });
     </script>
+
+    
 </body>
 
 </html>

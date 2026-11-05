@@ -477,10 +477,11 @@ $providerBalances = $balanceService->getCachedOrPlaceholderBalances();
             </div>
         </div>
 
-        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <?php
             $providerIcons = [
                 'cheapdatahub' => '<path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />',
+                'smeapi' => '<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />',
                 'fivesim' => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />',
                 'termii' => '<path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.974-.94 6.012 6.012 0 00.91-3.27C4.167 15.347 3 13.766 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />'
             ];
@@ -2445,6 +2446,188 @@ $providerBalances = $balanceService->getCachedOrPlaceholderBalances();
 
             </a>
 
+            <!-- PLATFORM & WHATSAPP SETTINGS -->
+
+            <a
+                href="settings.php"
+                class="group rounded-2xl border
+                border-slate-200 bg-white
+                p-5 shadow-sm transition
+                hover:-translate-y-0.5
+                hover:border-emerald-200
+                hover:shadow-md"
+            >
+
+                <div
+                    class="flex items-start
+                    justify-between"
+                >
+
+                    <div
+                        class="flex h-11 w-11
+                        items-center justify-center
+                        rounded-xl bg-emerald-50
+                        text-emerald-600"
+                    >
+                        <svg
+                            class="h-5 w-5 fill-current"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.33 7.34 9 7.42 8.71 7.73C8.42 8.04 7.6 8.81 7.6 10.37C7.6 11.93 8.74 13.44 8.9 13.65C9.06 13.86 11.13 17.05 14.3 18.42C15.06 18.75 15.65 18.95 16.11 19.09C16.87 19.33 17.57 19.3 18.12 19.22C18.74 19.13 20.02 18.45 20.28 17.7C20.55 16.96 20.55 16.33 20.47 16.2C20.39 16.07 20.19 16 19.88 15.84C19.58 15.68 18.07 14.94 17.79 14.84C17.51 14.73 17.31 14.68 17.11 14.99C16.9 15.29 16.33 15.97 16.15 16.17C15.98 16.38 15.8 16.4 15.5 16.25C15.19 16.1 13.9 15.67 12.36 14.3C11.17 13.23 10.36 11.91 10.06 11.4C9.75 10.89 10.03 10.61 10.18 10.46C10.32 10.32 10.49 10.09 10.65 9.91C10.8 9.72 10.85 9.59 10.95 9.38C11.06 9.18 11 9 10.93 8.85C10.85 8.7 10.28 7.31 10.05 6.74C9.82 6.19 9.58 6.27 9.4 6.26L8.85 6.25C8.65 6.25 8.35 6.33 8.05 6.64L9.53 7.34Z"
+                            />
+                        </svg>
+                    </div>
+
+                    <span
+                        class="text-slate-300
+                        transition
+                        group-hover:text-emerald-600"
+                    >
+                        →
+                    </span>
+
+                </div>
+
+                <div
+                    class="mt-5 flex
+                    items-center gap-2"
+                >
+                    <h3
+                        class="font-bold
+                        text-slate-900"
+                    >
+                        WhatsApp & Platform Settings
+                    </h3>
+                </div>
+
+                <p
+                    class="mt-1 text-sm
+                    leading-6 text-slate-500"
+                >
+                    Configure WhatsApp live support
+                    number, default greeting, and
+                    platform controls.
+                </p>
+
+            </a>
+
+            <!-- ANNOUNCEMENTS MANAGEMENT -->
+
+            <a
+                href="announcements.php"
+                class="group rounded-2xl border
+                border-slate-200 bg-white
+                p-5 shadow-sm transition
+                hover:-translate-y-0.5
+                hover:border-purple-200
+                hover:shadow-md"
+            >
+
+                <div
+                    class="flex items-start
+                    justify-between"
+                >
+
+                    <div
+                        class="flex h-11 w-11
+                        items-center justify-center
+                        rounded-xl bg-purple-50
+                        text-purple-600"
+                    >
+                        <span class="text-xl">📢</span>
+                    </div>
+
+                    <span
+                        class="text-slate-300
+                        transition
+                        group-hover:text-purple-600"
+                    >
+                        →
+                    </span>
+
+                </div>
+
+                <div
+                    class="mt-5 flex
+                    items-center gap-2"
+                >
+                    <h3
+                        class="font-bold
+                        text-slate-900"
+                    >
+                        Announcements Management
+                    </h3>
+                </div>
+
+                <p
+                    class="mt-1 text-sm
+                    leading-6 text-slate-500"
+                >
+                    Create, schedule, target and publish
+                    maintenance alerts and customer banners.
+                </p>
+
+            </a>
+
+            <!-- REAL-TIME PUSH NOTIFICATIONS -->
+
+            <a
+                href="push_notifications.php"
+                class="group rounded-2xl border
+                border-slate-200 bg-white
+                p-5 shadow-sm transition
+                hover:-translate-y-0.5
+                hover:border-indigo-200
+                hover:shadow-md"
+            >
+
+                <div
+                    class="flex items-start
+                    justify-between"
+                >
+
+                    <div
+                        class="flex h-11 w-11
+                        items-center justify-center
+                        rounded-xl bg-indigo-50
+                        text-indigo-600"
+                    >
+                        <span class="text-xl">📱</span>
+                    </div>
+
+                    <span
+                        class="text-slate-300
+                        transition
+                        group-hover:text-indigo-600"
+                    >
+                        →
+                    </span>
+
+                </div>
+
+                <div
+                    class="mt-5 flex
+                    items-center gap-2"
+                >
+                    <h3
+                        class="font-bold
+                        text-slate-900"
+                    >
+                        Phone Push Notifications
+                    </h3>
+                </div>
+
+                <p
+                    class="mt-1 text-sm
+                    leading-6 text-slate-500"
+                >
+                    Broadcast instant real-time alerts to
+                    customer mobile phones via Web Push.
+                </p>
+
+            </a>
+
         </div>
 
     </section>
@@ -2616,7 +2799,7 @@ async function refreshProviderBalances(isManual = false) {
     if (btn) btn.disabled = true;
     if (spinner) spinner.classList.add('animate-spin');
 
-    const providers = ['cheapdatahub', 'fivesim', 'termii'];
+    const providers = ['cheapdatahub', 'smeapi', 'fivesim', 'termii'];
 
     // Dispatch queries concurrently - each provider loads and updates its card independently
     await Promise.allSettled(providers.map(key => fetchSingleProviderBalance(key, isManual)));

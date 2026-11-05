@@ -154,6 +154,7 @@ try {
 
     $providerSlug = strtolower(trim((string) $precheckPlan["provider_slug"]));
     $cheapDataHub = null;
+    $smeApiClient = null;
 
     if ($providerSlug === "cheapdatahub") {
         $apiKey = $_ENV["CHEAPDATAHUB_API_KEY"] ?? getenv("CHEAPDATAHUB_API_KEY");
@@ -213,6 +214,42 @@ try {
             header("Location: buy_data.php?error=provider_unavailable");
             exit;
         }
+
+        if ($supplierBalance < $precheckCostPrice) {
+            header("Location: buy_data.php?error=supplier_balance");
+            exit;
+        }
+    } elseif ($providerSlug === "smeapi") {
+        require_once "../includes/SmeApiClient.php";
+        $apiKey = trim((string)(getenv("SMEAPI_API_KEY") ?: ($_ENV["SMEAPI_API_KEY"] ?? "")));
+        if ($apiKey === "") {
+            try {
+                $stmt = $pdo->prepare("SELECT setting_value FROM app_settings WHERE setting_key = 'smeapi_api_key' LIMIT 1");
+                $stmt->execute();
+                $val = $stmt->fetchColumn();
+                if ($val !== false) {
+                    $apiKey = trim((string)$val);
+                }
+            } catch (\Throwable) {}
+        }
+        $baseUrl = trim((string)(getenv("SMEAPI_BASE_URL") ?: ($_ENV["SMEAPI_BASE_URL"] ?? "https://smeapi.com.ng")));
+
+        if (!$apiKey) {
+            error_log("SMEAPI API key is not configured.");
+            header("Location: buy_data.php?error=provider_unavailable");
+            exit;
+        }
+
+        $smeApiClient = new SmeApiClient($apiKey, $baseUrl);
+        $balanceResult = $smeApiClient->getBalance();
+
+        if (($balanceResult["ok"] ?? false) !== true || $balanceResult["balance"] === null) {
+            error_log("SMEAPI balance pre-check failed: " . ($balanceResult["message"] ?? "unknown"));
+            header("Location: buy_data.php?error=provider_unavailable");
+            exit;
+        }
+
+        $supplierBalance = (float)$balanceResult["balance"];
 
         if ($supplierBalance < $precheckCostPrice) {
             header("Location: buy_data.php?error=supplier_balance");
@@ -474,13 +511,13 @@ try {
     try {
         $providerSlug = strtolower(trim((string) $plan["provider_slug"]));
 
-        if ($providerSlug === "cheapdatahub") {
-            $processor = new DataProviderProcessor($pdo, $cheapDataHub);
+        if ($providerSlug === "cheapdatahub" || $providerSlug === "smeapi") {
+            $processor = new DataProviderProcessor($pdo, $cheapDataHub, $smeApiClient);
             $providerResult = $processor->process($orderId);
 
             if (($providerResult["success"] ?? false) !== true) {
                 error_log(
-                    "Data provider returned a non-success result for order " .
+                    "Data provider ({$providerSlug}) returned a non-success result for order " .
                     $orderReference . "."
                 );
             }

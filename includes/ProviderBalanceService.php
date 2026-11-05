@@ -21,6 +21,8 @@ class ProviderBalanceService
 {
     private string $cheapDataHubApiKey;
     private string $cheapDataHubBaseUrl;
+    private string $smeApiKey;
+    private string $smeApiBaseUrl;
     private string $fiveSimApiKey;
     private string $fiveSimBaseUrl;
     private string $termiiApiKey;
@@ -31,16 +33,48 @@ class ProviderBalanceService
         require_once __DIR__ . '/../config/env.php';
 
         // CheapDataHub
-        $this->cheapDataHubApiKey = trim((string)(getenv('CHEAPDATAHUB_API_KEY') ?: ($_ENV['CHEAPDATAHUB_API_KEY'] ?? '')));
-        $this->cheapDataHubBaseUrl = rtrim((string)(getenv('CHEAPDATAHUB_BASE_URL') ?: ($_ENV['CHEAPDATAHUB_BASE_URL'] ?? 'https://www.cheapdatahub.ng/api/v1/resellers')), '/');
+        $this->cheapDataHubApiKey = trim((string)(subnextEnv('CHEAPDATAHUB_API_KEY') ?: getenv('CHEAPDATAHUB_API_KEY') ?: ($_ENV['CHEAPDATAHUB_API_KEY'] ?? '')));
+        $this->cheapDataHubBaseUrl = rtrim((string)(subnextEnv('CHEAPDATAHUB_BASE_URL') ?: getenv('CHEAPDATAHUB_BASE_URL') ?: ($_ENV['CHEAPDATAHUB_BASE_URL'] ?? 'https://www.cheapdatahub.ng/api/v1/resellers')), '/');
+
+        // SMEAPI (Data Subscription Provider Only)
+        $this->smeApiKey = trim((string)(subnextEnv('SMEAPI_API_KEY') ?: getenv('SMEAPI_API_KEY') ?: ($_ENV['SMEAPI_API_KEY'] ?? '')));
+        if ($this->smeApiKey === '') {
+            try {
+                if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
+                    $stmt = $GLOBALS['pdo']->prepare("SELECT setting_value FROM app_settings WHERE setting_key = 'smeapi_api_key' LIMIT 1");
+                    $stmt->execute();
+                    $val = $stmt->fetchColumn();
+                    if ($val !== false) {
+                        $this->smeApiKey = trim((string)$val);
+                    }
+                }
+            } catch (\Throwable) {}
+        } else {
+            // Sync to app_settings if database value is currently empty
+            try {
+                if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
+                    $checkStmt = $GLOBALS['pdo']->prepare("SELECT setting_value FROM app_settings WHERE setting_key = 'smeapi_api_key' LIMIT 1");
+                    $checkStmt->execute();
+                    $dbVal = $checkStmt->fetchColumn();
+                    if ($dbVal === false) {
+                        $insStmt = $GLOBALS['pdo']->prepare("INSERT INTO app_settings (setting_key, setting_value, setting_group, description) VALUES ('smeapi_api_key', ?, 'api', 'SMEAPI API Key for Data Subscriptions')");
+                        $insStmt->execute([$this->smeApiKey]);
+                    } elseif (trim((string)$dbVal) === '') {
+                        $upStmt = $GLOBALS['pdo']->prepare("UPDATE app_settings SET setting_value = ? WHERE setting_key = 'smeapi_api_key'");
+                        $upStmt->execute([$this->smeApiKey]);
+                    }
+                }
+            } catch (\Throwable) {}
+        }
+        $this->smeApiBaseUrl = rtrim((string)(subnextEnv('SMEAPI_BASE_URL') ?: getenv('SMEAPI_BASE_URL') ?: ($_ENV['SMEAPI_BASE_URL'] ?? 'https://smeapi.com.ng')), '/');
 
         // 5SIM
-        $this->fiveSimApiKey = trim((string)(getenv('FIVESIM_API_KEY') ?: ($_ENV['FIVESIM_API_KEY'] ?? '')));
-        $this->fiveSimBaseUrl = rtrim((string)(getenv('FIVESIM_BASE_URL') ?: ($_ENV['FIVESIM_BASE_URL'] ?? 'https://5sim.net/v1')), '/');
+        $this->fiveSimApiKey = trim((string)(subnextEnv('FIVESIM_API_KEY') ?: getenv('FIVESIM_API_KEY') ?: ($_ENV['FIVESIM_API_KEY'] ?? '')));
+        $this->fiveSimBaseUrl = rtrim((string)(subnextEnv('FIVESIM_BASE_URL') ?: getenv('FIVESIM_BASE_URL') ?: ($_ENV['FIVESIM_BASE_URL'] ?? 'https://5sim.net/v1')), '/');
 
         // Termii
-        $this->termiiApiKey = trim((string)(getenv('TERMII_API_KEY') ?: ($_ENV['TERMII_API_KEY'] ?? '')));
-        $this->termiiBaseUrl = rtrim((string)(getenv('TERMII_BASE_URL') ?: ($_ENV['TERMII_BASE_URL'] ?? 'https://api.ng.termii.com/api')), '/');
+        $this->termiiApiKey = trim((string)(subnextEnv('TERMII_API_KEY') ?: getenv('TERMII_API_KEY') ?: ($_ENV['TERMII_API_KEY'] ?? '')));
+        $this->termiiBaseUrl = rtrim((string)(subnextEnv('TERMII_BASE_URL') ?: getenv('TERMII_BASE_URL') ?: ($_ENV['TERMII_BASE_URL'] ?? 'https://api.ng.termii.com/api')), '/');
     }
 
     /**
@@ -59,6 +93,7 @@ class ProviderBalanceService
 
         return [
             'cheapdatahub' => $this->buildPlaceholderPayload('cheapdatahub', 'CheapDataHub', 'Airtime, Data, Cable & Electricity', '₦', 'NGN'),
+            'smeapi' => $this->buildPlaceholderPayload('smeapi', 'SMEAPI', 'Data Subscriptions Only', '₦', 'NGN'),
             'fivesim' => $this->buildPlaceholderPayload('fivesim', '5SIM', 'Foreign Virtual Numbers', '$', 'USD'),
             'termii' => $this->buildPlaceholderPayload('termii', 'Termii', 'Bulk SMS Gateway', '₦', 'NGN'),
         ];
@@ -78,7 +113,7 @@ class ProviderBalanceService
             $mtime = @filemtime($cacheFile);
             if ($mtime !== false && (time() - $mtime) < $cacheTtl) {
                 $cached = @json_decode((string)@file_get_contents($cacheFile), true);
-                if (is_array($cached) && !empty($cached)) {
+                if (is_array($cached) && !empty($cached) && ($cached['status'] ?? '') !== 'unconfigured') {
                     return $cached;
                 }
             }
@@ -86,13 +121,16 @@ class ProviderBalanceService
 
         $result = match ($providerKey) {
             'cheapdatahub' => $this->getCheapDataHubBalance(),
+            'smeapi' => $this->getSmeApiBalance(),
             'fivesim' => $this->getFiveSimBalance(),
             'termii' => $this->getTermiiBalance(),
             default => null,
         };
 
-        if ($result !== null) {
+        if ($result !== null && ($result['status'] ?? '') !== 'unconfigured') {
             @file_put_contents($cacheFile, json_encode($result, JSON_UNESCAPED_SLASHES));
+        } elseif (file_exists($cacheFile) && ($result['status'] ?? '') === 'unconfigured') {
+            @unlink($cacheFile);
         }
 
         return $result;
@@ -109,7 +147,7 @@ class ProviderBalanceService
     public function getAllBalances(bool $forceRefresh = false): array
     {
         $balances = [];
-        $providers = ['cheapdatahub', 'fivesim', 'termii'];
+        $providers = ['cheapdatahub', 'smeapi', 'fivesim', 'termii'];
 
         foreach ($providers as $pKey) {
             try {
@@ -192,6 +230,57 @@ class ProviderBalanceService
             'formatted' => $currencySymbol . number_format($balanceFloat, 2),
             'environment' => 'Live',
             'message' => 'Wallet balance retrieved successfully',
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+    }
+
+    /**
+     * Query SMEAPI user wallet balance (Strictly Data Subscriptions Only)
+     * Endpoint: GET https://smeapi.com.ng/api/user/
+     */
+    public function getSmeApiBalance(): array
+    {
+        $providerKey = 'smeapi';
+        $providerName = 'SMEAPI';
+        $serviceName = 'Data Subscriptions Only';
+        $currencySymbol = '₦';
+        $currencyCode = 'NGN';
+
+        if (empty($this->smeApiKey)) {
+            return $this->buildUnconfiguredPayload($providerKey, $providerName, $serviceName, $currencySymbol, $currencyCode);
+        }
+
+        require_once __DIR__ . '/SmeApiClient.php';
+        $client = new SmeApiClient($this->smeApiKey, $this->smeApiBaseUrl);
+        $res = $client->getBalance();
+
+        if (!$res['ok'] || $res['balance'] === null) {
+            return $this->buildErrorPayload(
+                $providerKey,
+                $providerName,
+                $serviceName,
+                $currencySymbol,
+                $currencyCode,
+                $res['message'] ?: 'Failed to retrieve balance from SMEAPI'
+            );
+        }
+
+        $balanceFloat = (float)$res['balance'];
+        $extraInfo = $res['username'] ? 'Account: ' . $res['username'] : 'Data Subscriptions';
+
+        return [
+            'provider' => $providerKey,
+            'name' => $providerName,
+            'service' => $serviceName,
+            'status' => 'connected',
+            'is_configured' => true,
+            'balance' => $balanceFloat,
+            'currency' => $currencyCode,
+            'symbol' => $currencySymbol,
+            'formatted' => $currencySymbol . number_format($balanceFloat, 2),
+            'environment' => 'Live',
+            'extra_info' => $extraInfo,
+            'message' => 'SMEAPI balance retrieved successfully',
             'timestamp' => date('Y-m-d H:i:s')
         ];
     }

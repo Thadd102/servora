@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../includes/client_auth.php";
+require_once __DIR__ . "/../includes/announcement_widget.php";
+require_once __DIR__ . "/../includes/app_install_widget.php";
 
 $userId = currentUserId();
 
@@ -64,6 +66,9 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="description" content="Subnext Client Dashboard: Manage your wallet balance, recent transactions, data subscriptions, and instant digital services.">
     <!-- Precompiled Production Stylesheet -->
     <link rel="stylesheet" href="../assets/css/style.css">
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="../manifest.json">
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
@@ -120,6 +125,9 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
      MAIN BODY CONTAINER (EXACT SERVORA DESIGN FORMAT)
 ========================================================= -->
 <main class="mx-auto w-full max-w-7xl px-3.5 py-3.5 pb-24 md:py-6 md:pb-8 sm:px-6 lg:px-8">
+
+    <!-- DYNAMIC ANNOUNCEMENTS BANNER / POPUP -->
+    <?php renderSubnextAnnouncements($userId); ?>
 
     <!-- 1. WELCOME HERO SECTION -->
     <section class="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-servora-800 via-servora-700 to-servora-600 p-4 sm:p-7 text-white shadow-md sm:shadow-lg">
@@ -534,6 +542,15 @@ $recentTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
      STANDARDIZED MOBILE BOTTOM NAVIGATION
 ========================================================= -->
 <?php require_once __DIR__ . "/../includes/client_bottom_nav.php"; ?>
+
+<!-- =========================================================
+     PWA INSTALL PROMPT / APK BANNER (WITH BOTTOM NAV OFFSET)
+========================================================= -->
+<?php renderSubnextInstallWidget(true); ?>
+
+<!-- Push & PWA Managers -->
+<script src="../assets/js/push_manager.js"></script>
+<script src="../assets/js/pwa_installer.js"></script>
 
 </body>
 </html>

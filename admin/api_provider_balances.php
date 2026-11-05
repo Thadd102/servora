@@ -24,7 +24,7 @@ try {
     $providerKey = isset($_GET['provider']) ? strtolower(trim((string)$_GET['provider'])) : null;
 
     if ($providerKey !== null && $providerKey !== '') {
-        $allowedProviders = ['cheapdatahub', 'fivesim', 'termii'];
+        $allowedProviders = ['cheapdatahub', 'smeapi', 'fivesim', 'termii'];
         if (!in_array($providerKey, $allowedProviders, true)) {
             http_response_code(400);
             echo json_encode([

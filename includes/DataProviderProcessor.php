@@ -1,12 +1,14 @@
 <?php
 
 require_once __DIR__ . "/CheapDataHubClient.php";
+require_once __DIR__ . "/SmeApiClient.php";
 require_once __DIR__ . "/DataOrderRefundService.php";
 
 class DataProviderProcessor
 {
     private PDO $pdo;
     private ?CheapDataHubClient $cheapDataHub;
+    private ?SmeApiClient $smeApiClient;
     private DataOrderRefundService $refundService;
 
 
@@ -18,10 +20,12 @@ class DataProviderProcessor
 
     public function __construct(
         PDO $pdo,
-        ?CheapDataHubClient $cheapDataHub = null
+        ?CheapDataHubClient $cheapDataHub = null,
+        ?SmeApiClient $smeApiClient = null
     ) {
         $this->pdo = $pdo;
         $this->cheapDataHub = $cheapDataHub;
+        $this->smeApiClient = $smeApiClient;
 
         $this->refundService = new DataOrderRefundService($pdo);
     }
@@ -160,19 +164,19 @@ class DataProviderProcessor
 
             /*
             |--------------------------------------------------------------------------
-            | SUPPORTED PROVIDER: CheapDataHub
+            | SUPPORTED PROVIDERS: CheapDataHub & SMEAPI
             |--------------------------------------------------------------------------
             */
 
             $providerSlug = strtolower(trim((string)($order["provider_slug"] ?? '')));
 
-            if ($providerSlug !== "cheapdatahub") {
+            if (!in_array($providerSlug, ["cheapdatahub", "smeapi"], true)) {
                 $this->pdo->rollBack();
 
                 return [
                     "success" => false,
                     "state" => "configuration_error",
-                    "message" => "Unsupported data supplier."
+                    "message" => "Unsupported data supplier (" . ($providerSlug ?: 'unassigned') . ")."
                 ];
             }
 
@@ -195,7 +199,8 @@ class DataProviderProcessor
                 ];
             }
 
-            $requestReference = "CDH-" . $order["order_reference"] . "-" . strtoupper(bin2hex(random_bytes(3)));
+            $refPrefix = ($providerSlug === "smeapi") ? "SME-" : "CDH-";
+            $requestReference = $refPrefix . $order["order_reference"] . "-" . strtoupper(bin2hex(random_bytes(3)));
 
 
             /*
@@ -292,7 +297,7 @@ class DataProviderProcessor
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 2: CALL SUPPLIER API (CHEAPDATAHUB)
+        | STEP 2: CALL SUPPLIER API (CHEAPDATAHUB OR SMEAPI)
         |--------------------------------------------------------------------------
         |
         | The order is already locked in 'processing'.
@@ -302,16 +307,66 @@ class DataProviderProcessor
 
         try {
 
-            if ($this->cheapDataHub === null) {
-                $apiKey = $_ENV["CHEAPDATAHUB_API_KEY"] ?? getenv("CHEAPDATAHUB_API_KEY");
-                $baseUrl = $_ENV["CHEAPDATAHUB_BASE_URL"] ?? getenv("CHEAPDATAHUB_BASE_URL") ?: "https://www.cheapdatahub.ng/api/v1/resellers/";
-                $this->cheapDataHub = new CheapDataHubClient($apiKey, $baseUrl);
-            }
+            if ($providerSlug === "cheapdatahub") {
+                if ($this->cheapDataHub === null) {
+                    $apiKey = $_ENV["CHEAPDATAHUB_API_KEY"] ?? getenv("CHEAPDATAHUB_API_KEY");
+                    $baseUrl = $_ENV["CHEAPDATAHUB_BASE_URL"] ?? getenv("CHEAPDATAHUB_BASE_URL") ?: "https://www.cheapdatahub.ng/api/v1/resellers/";
+                    $this->cheapDataHub = new CheapDataHubClient($apiKey, $baseUrl);
+                }
 
-            $result = $this->cheapDataHub->purchaseData(
-                (int)$bundleId,
-                $order["phone_number"]
-            );
+                $result = $this->cheapDataHub->purchaseData(
+                    (int)$bundleId,
+                    $order["phone_number"]
+                );
+            } elseif ($providerSlug === "smeapi") {
+                if ($this->smeApiClient === null) {
+                    require_once __DIR__ . "/SmeApiClient.php";
+                    $apiKey = trim((string)(getenv("SMEAPI_API_KEY") ?: ($_ENV["SMEAPI_API_KEY"] ?? "")));
+                    if ($apiKey === "") {
+                        try {
+                            $stmt = $this->pdo->prepare("SELECT setting_value FROM app_settings WHERE setting_key = 'smeapi_api_key' LIMIT 1");
+                            $stmt->execute();
+                            $val = $stmt->fetchColumn();
+                            if ($val !== false) {
+                                $apiKey = trim((string)$val);
+                            }
+                        } catch (\Throwable) {}
+                    }
+                    $baseUrl = trim((string)(getenv("SMEAPI_BASE_URL") ?: ($_ENV["SMEAPI_BASE_URL"] ?? "https://smeapi.com.ng")));
+                    $this->smeApiClient = new SmeApiClient($apiKey, $baseUrl);
+                }
+
+                $networkMap = [
+                    'mtn' => 1,
+                    'glo' => 2,
+                    '9mobile' => 3,
+                    't2' => 3,
+                    'airtel' => 4
+                ];
+                $networkSlug = strtolower(trim((string)($order["network_slug"] ?? '')));
+                $smeNetworkId = $networkMap[$networkSlug] ?? 1;
+
+                $smeRes = $this->smeApiClient->purchaseData(
+                    $smeNetworkId,
+                    (int)$bundleId,
+                    $order["phone_number"],
+                    $requestReference
+                );
+
+                $result = [
+                    "ok" => $smeRes["ok"],
+                    "http_status" => $smeRes["http_status"],
+                    "state" => $smeRes["state"],
+                    "message" => $smeRes["message"],
+                    "data" => [
+                        "status" => $smeRes["state"] === "successful" ? "successful" : ($smeRes["state"] === "processing" ? "pending" : "failed"),
+                        "reference" => $smeRes["provider_reference"] ?: $requestReference,
+                        "raw" => $smeRes["data"]
+                    ]
+                ];
+            } else {
+                throw new RuntimeException("Unhandled supplier type: " . $providerSlug);
+            }
 
         } catch (Throwable $e) {
 

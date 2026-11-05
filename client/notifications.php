@@ -134,6 +134,9 @@ $profileInitial = strtoupper(substr($fullName, 0, 1));
     <!-- Precompiled Production Stylesheet -->
     <link rel="stylesheet" href="../assets/css/style.css">
 
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="../manifest.json">
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
@@ -230,6 +233,29 @@ $profileInitial = strtoupper(substr($fullName, 0, 1));
             <a href="fund_wallet.php" class="rounded-xl bg-servora-50 px-4 py-2.5 text-sm font-bold text-servora-700 hover:bg-servora-100 transition">
                 Fund Wallet
             </a>
+        </div>
+    </section>
+
+    <!-- REAL-TIME PHONE PUSH NOTIFICATIONS SETTINGS -->
+    <section class="mt-4 rounded-2xl border border-servora-100 bg-gradient-to-br from-white to-servora-50/40 p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-servora-100 text-servora-700">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900">Real-Time Phone Push Notifications</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Receive instant order updates, tokens, and critical announcements directly on your phone screen even when Subnext is closed.</p>
+                    <p class="text-xs font-semibold text-slate-600 mt-2">Notification Status: <span id="push-status-label" class="font-bold text-servora-700">Checking...</span></p>
+                </div>
+            </div>
+            <div class="shrink-0 sm:self-center">
+                <button type="button" id="toggle-push-btn" class="inline-flex min-h-10 items-center justify-center rounded-xl bg-servora-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-servora-800">
+                    Enable Phone Notifications
+                </button>
+            </div>
         </div>
     </section>
 
@@ -673,5 +699,14 @@ $profileInitial = strtoupper(substr($fullName, 0, 1));
 
 
 <?php require_once __DIR__ . "/../includes/client_bottom_nav.php"; ?>
+
+<script src="../assets/js/push_manager.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.SubnextPush) {
+        window.SubnextPush.initUI('toggle-push-btn', 'push-status-label');
+    }
+});
+</script>
 </body>
 </html>

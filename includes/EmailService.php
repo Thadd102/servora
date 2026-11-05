@@ -151,7 +151,8 @@ class EmailService
         string $recipientEmail,
         string $recipientName,
         string $otp,
-        string $purpose = 'Password Reset'
+        string $purpose = 'Password Reset',
+        int $expiryMinutes = 10
     ): bool {
         if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
             return false;
@@ -168,6 +169,7 @@ class EmailService
 
             $safeName = htmlspecialchars($recipientName, ENT_QUOTES, 'UTF-8');
             $safeOtp = htmlspecialchars($otp, ENT_QUOTES, 'UTF-8');
+            $safeExpiry = (int)$expiryMinutes;
             $year = date('Y');
 
             $mail->Body = "
@@ -192,7 +194,7 @@ class EmailService
                     </div>
 
                     <p style='font-size:13px;color:#475569;margin:0 0 14px 0;'>
-                        ⏱️ This code is valid for <strong>10 minutes</strong>.
+                        ⏱️ This code is valid for <strong>{$safeExpiry} minutes</strong>.
                     </p>
 
                     <p style='font-size:12px;color:#64748b;background:#f8fafc;border-left:3px solid #cbd5e1;padding:10px 14px;margin:0 0 24px 0;border-radius:4px;'>
@@ -219,7 +221,7 @@ class EmailService
             $mail->AltBody = "Hello {$recipientName},\n\n"
                 . "Your Subnext verification code is: {$otp}\n\n"
                 . "Purpose: {$purpose}\n"
-                . "This code expires in 10 minutes. Never share this code with anyone.\n"
+                . "This code expires in {$safeExpiry} minutes. Never share this code with anyone.\n"
                 . "If you did not request this, please ignore this email.\n\n"
                 . "Subnext - Digital Services, Simplified.\n"
                 . "support@subnext.com.ng";
