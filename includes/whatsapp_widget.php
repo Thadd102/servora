@@ -184,14 +184,16 @@ if (!function_exists('renderSubnextWhatsAppWidget')) {
                 <!-- Tooltip badge (Visible on Desktop hover) -->
                 <div class="sn-wa-tooltip">
                     <span class="sn-wa-dot"></span>
-                    Chat on WhatsApp
+                    <span>Chat on WhatsApp</span>
+                    <span style="opacity:0.85; font-size:11px; margin-left:4px; font-weight:600;">(<?= htmlspecialchars($rawNumber, ENT_QUOTES, 'UTF-8') ?>)</span>
                 </div>
 
                 <!-- Floating WhatsApp Trigger Button -->
                 <a href="<?= htmlspecialchars($waUrl, ENT_QUOTES, 'UTF-8') ?>"
                    target="_blank"
                    rel="noopener noreferrer"
-                   aria-label="Chat with Subnext Support on WhatsApp"
+                   title="WhatsApp Support: <?= htmlspecialchars($rawNumber, ENT_QUOTES, 'UTF-8') ?>"
+                   aria-label="Chat with Subnext Support on WhatsApp (<?= htmlspecialchars($rawNumber, ENT_QUOTES, 'UTF-8') ?>)"
                    class="sn-wa-btn">
                     <span class="sn-wa-pulse"></span>
                     <svg viewBox="0 0 24 24" aria-hidden="true">

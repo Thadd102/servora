@@ -2819,5 +2819,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script src="../assets/js/loader.js" defer></script>
 </body>
 </html>

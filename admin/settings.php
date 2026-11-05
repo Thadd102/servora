@@ -135,6 +135,54 @@ $previewUrl = 'https://wa.me/' . $previewDigits . '?text=' . rawurlencode($waMes
     <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+
+    <!-- Dedicated Bulletproof Switch & Toggle Styles -->
+    <style>
+        .sn-toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 30px;
+            cursor: pointer;
+            flex-shrink: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sn-toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        .sn-toggle-slider {
+            position: absolute;
+            inset: 0;
+            background-color: #CBD5E1;
+            border-radius: 9999px;
+            transition: background-color 0.22s ease;
+        }
+        .sn-toggle-slider::before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22);
+            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sn-toggle-switch input:checked + .sn-toggle-slider {
+            background-color: #25D366;
+        }
+        .sn-toggle-switch.indigo input:checked + .sn-toggle-slider {
+            background-color: #4F46E5;
+        }
+        .sn-toggle-switch input:checked + .sn-toggle-slider::before {
+            transform: translateX(22px);
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
 
@@ -250,10 +298,20 @@ $previewUrl = 'https://wa.me/' . $previewDigits . '?text=' . rawurlencode($waMes
                         <div>
                             <p class="text-sm font-bold text-slate-900">Display Floating WhatsApp Icon</p>
                             <p class="text-xs text-slate-500">Show the floating customer support button across landing and user pages.</p>
+                            <span id="wa-status-text" class="inline-block mt-1 text-[11px] font-bold <?= $waStatus === '1' ? 'text-emerald-600' : 'text-slate-500' ?>">
+                                <?= $waStatus === '1' ? '● Currently Enabled (Visible to customers)' : '○ Currently Disabled (Hidden from customers)' ?>
+                            </span>
                         </div>
-                        <label class="relative inline-flex cursor-pointer items-center">
-                            <input type="checkbox" name="whatsapp_support_status" value="1" <?= $waStatus === '1' ? 'checked' : '' ?> class="peer sr-only">
-                            <div class="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#25D366] peer-checked:after:translate-x-full peer-focus:outline-none"></div>
+                        <label class="sn-toggle-switch" aria-label="Toggle Floating WhatsApp Icon">
+                            <input
+                                type="checkbox"
+                                id="whatsapp_support_status"
+                                name="whatsapp_support_status"
+                                value="1"
+                                <?= $waStatus === '1' ? 'checked' : '' ?>
+                                onchange="var el = document.getElementById('wa-status-text'); if (el) { el.textContent = this.checked ? '● Currently Enabled (Visible to customers)' : '○ Currently Disabled (Hidden from customers)'; el.className = this.checked ? 'inline-block mt-1 text-[11px] font-bold text-emerald-600' : 'inline-block mt-1 text-[11px] font-bold text-slate-500'; }"
+                            >
+                            <span class="sn-toggle-slider"></span>
                         </label>
                     </div>
 
@@ -344,15 +402,14 @@ $previewUrl = 'https://wa.me/' . $previewDigits . '?text=' . rawurlencode($waMes
                             <p class="text-sm font-bold text-slate-900">Enable SMEAPI Provider</p>
                             <p class="text-xs text-slate-500">When active, SMEAPI plans will be available for fulfillment.</p>
                         </div>
-                        <label class="relative inline-flex cursor-pointer items-center">
+                        <label class="sn-toggle-switch indigo" aria-label="Enable SMEAPI Provider">
                             <input
                                 type="checkbox"
                                 name="smeapi_status"
                                 value="1"
-                                class="peer sr-only"
                                 <?= $smeStatusDb === '1' ? 'checked' : '' ?>
                             >
-                            <div class="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-indigo-600 peer-checked:after:translate-x-full peer-focus:outline-none"></div>
+                            <span class="sn-toggle-slider"></span>
                         </label>
                     </div>
 
@@ -453,6 +510,7 @@ $previewUrl = 'https://wa.me/' . $previewDigits . '?text=' . rawurlencode($waMes
 
 </main>
 
+<script src="../assets/js/loader.js" defer></script>
 </body>
 </html>
 
