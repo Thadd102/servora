@@ -73,9 +73,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Retrieve stats & history
-$stats = $pushService->getStats();
-$history = $pushService->getHistory(50);
-$vapidPubKey = $pushService->getVapidPublicKey();
+$stats = [
+    'total_subscribers' => 0,
+    'total_notifications_sent' => 0,
+    'successful_deliveries' => 0,
+    'delivery_rate' => 0,
+];
+$history = [];
+$vapidPubKey = '';
+
+try {
+    $stats = $pushService->getStats();
+    $history = $pushService->getHistory(50);
+    $vapidPubKey = $pushService->getVapidPublicKey();
+} catch (Throwable $e) {
+    $error = "Notice: Could not load push statistics: " . $e->getMessage();
+}
 
 function e($str): string {
     return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');

@@ -131,7 +131,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Filter
 $typeFilter = isset($_GET['type']) ? trim((string)$_GET['type']) : null;
-$announcements = $announcementService->getAll($typeFilter);
+$announcements = [];
+try {
+    $announcements = $announcementService->getAll($typeFilter);
+} catch (Throwable $e) {
+    $error = "Notice: Could not load announcements list: " . $e->getMessage();
+}
 
 // Calculate Stats
 $totalCount = count($announcements);

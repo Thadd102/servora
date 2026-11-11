@@ -24,6 +24,45 @@ if (!class_exists('AnnouncementService')) {
                     $this->pdo = $GLOBALS['pdo'];
                 }
             }
+
+            $this->ensureTablesExist();
+        }
+
+        /**
+         * Auto-healing schema guarantee: ensures required announcement tables exist.
+         */
+        private function ensureTablesExist(): void
+        {
+            try {
+                $this->pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `announcements` (
+                        `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        `title` VARCHAR(255) NOT NULL,
+                        `message` TEXT NOT NULL,
+                        `type` ENUM('info', 'warning', 'maintenance', 'important') NOT NULL DEFAULT 'info',
+                        `target_type` ENUM('all', 'specific') NOT NULL DEFAULT 'all',
+                        `target_user_ids` TEXT NULL,
+                        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                        `expires_at` DATETIME NULL,
+                        `created_by` BIGINT UNSIGNED NULL,
+                        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX `idx_active_expiry` (`is_active`, `expires_at`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                    CREATE TABLE IF NOT EXISTS `announcement_dismissals` (
+                        `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        `announcement_id` INT UNSIGNED NOT NULL,
+                        `user_id` BIGINT UNSIGNED NULL,
+                        `guest_token` VARCHAR(64) NULL,
+                        `dismissed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE KEY `uniq_announcement_user` (`announcement_id`, `user_id`),
+                        KEY `idx_announcement_guest` (`announcement_id`, `guest_token`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (Throwable $e) {
+                error_log('[AnnouncementService] Auto-migration notice: ' . $e->getMessage());
+            }
         }
 
         /**

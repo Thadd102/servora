@@ -30,6 +30,8 @@ if (!class_exists('PushNotificationService')) {
 
             require_once __DIR__ . '/../config/env.php';
 
+            $this->ensureTablesAndKeys();
+
             // Load from .env first
             $this->vapidPublicKey = trim((string)(subnextEnv('VAPID_PUBLIC_KEY') ?: getenv('VAPID_PUBLIC_KEY') ?: ($_ENV['VAPID_PUBLIC_KEY'] ?? '')));
             $this->vapidPrivateKey = trim((string)(subnextEnv('VAPID_PRIVATE_KEY') ?: getenv('VAPID_PRIVATE_KEY') ?: ($_ENV['VAPID_PRIVATE_KEY'] ?? '')));
@@ -54,6 +56,69 @@ if (!class_exists('PushNotificationService')) {
                         $this->vapidSubject = trim((string)$rows['vapid_subject']);
                     }
                 } catch (\Throwable) {}
+            }
+        }
+
+        /**
+         * Auto-healing schema guarantee: ensures required push tables and VAPID keys exist.
+         */
+        private function ensureTablesAndKeys(): void
+        {
+            try {
+                $this->pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `push_subscriptions` (
+                        `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        `user_id` BIGINT UNSIGNED NULL,
+                        `endpoint` TEXT NOT NULL,
+                        `endpoint_hash` CHAR(64) NOT NULL UNIQUE,
+                        `p256dh` TEXT NOT NULL,
+                        `auth` VARCHAR(255) NOT NULL,
+                        `user_agent` VARCHAR(255) NULL,
+                        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        KEY `idx_user_active` (`user_id`, `is_active`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                    CREATE TABLE IF NOT EXISTS `push_notifications` (
+                        `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        `title` VARCHAR(255) NOT NULL,
+                        `body` TEXT NOT NULL,
+                        `target_url` VARCHAR(255) NOT NULL DEFAULT '/client/dashboard.php',
+                        `icon_url` VARCHAR(255) NULL,
+                        `target_type` ENUM('all', 'specific') NOT NULL DEFAULT 'all',
+                        `target_user_ids` TEXT NULL,
+                        `total_targeted` INT NOT NULL DEFAULT 0,
+                        `total_sent` INT NOT NULL DEFAULT 0,
+                        `total_failed` INT NOT NULL DEFAULT 0,
+                        `sent_by` BIGINT UNSIGNED NULL,
+                        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                // Check VAPID keys in app_settings
+                $chk = $this->pdo->query("SELECT setting_value FROM app_settings WHERE setting_key = 'vapid_public_key' LIMIT 1");
+                $val = $chk ? $chk->fetchColumn() : null;
+                if (empty($val) && function_exists('openssl_pkey_new')) {
+                    $res = openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+                    if ($res) {
+                        $details = openssl_pkey_get_details($res);
+                        $rawPub = "\x04" . $details['ec']['x'] . $details['ec']['y'];
+                        $pub = rtrim(strtr(base64_encode($rawPub), '+/', '-_'), '=');
+                        $priv = rtrim(strtr(base64_encode($details['ec']['d']), '+/', '-_'), '=');
+
+                        $ins = $this->pdo->prepare("
+                            INSERT INTO app_settings (setting_key, setting_value, setting_group, description)
+                            VALUES (?, ?, 'push', ?)
+                            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+                        ");
+                        $ins->execute(['vapid_public_key', $pub, 'VAPID Web Push Public Key']);
+                        $ins->execute(['vapid_private_key', $priv, 'VAPID Web Push Private Key']);
+                        $ins->execute(['vapid_subject', 'mailto:support@subnext.com.ng', 'VAPID Web Push Contact Subject']);
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('[PushNotificationService] Auto-migration notice: ' . $e->getMessage());
             }
         }
 
